@@ -1,0 +1,58 @@
+<?php
+
+
+require_once 'includes/tripal_rnaseq_exp_loader.inc';
+require_once 'includes/tripal_rnaseq.chado_node.inc';
+
+
+/**
+ * Implements hook_menu().
+ */
+function tripal_rnaseq_menu() {
+  $items = array();
+  
+  // === main admin page ===
+  $items['admin/tripal/extension/tripal_rnaseq'] = array(
+    'title' => 'Tripal RNASeq',
+    'description' => 'A module for RNASeq.',
+    'access arguments' => array('administer'),
+  );
+
+  // RNA-seq loading/update.
+  /**
+  $items['admin/tripal/extension/tripal_rnaseq/load'] = array(
+    'title' => 'Load',
+    'description' => 'Load RNASeq expression.',
+    'access arguments' => array('administer'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('tripal_rnaseq_load'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 5,
+  );
+  */
+
+  // === help === 
+  $items['admin/tripal/extension/tripal_rnaseq/help'] = array(
+    'title' => 'Help',
+    'description' => 'Document for how to use Tripal RNASeq.',
+    'access arguments' => array('administer'),
+    'page callback' => 'theme',
+    'page arguments' => array('tripal_rnaseq_help'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 10,
+  );
+ 
+}
+
+/**
+ * Implements hook_theme().
+ */
+//function tripal_rnaseq_theme() {
+//
+//}
+
+//function tripal_rnaseq_help() {
+//    
+//}
+
+
