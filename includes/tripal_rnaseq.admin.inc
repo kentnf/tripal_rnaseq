@@ -3,55 +3,31 @@
  * @file
  * 
  * This file contains the functions used for the administration
- * of the bioproject content type.
+ * of the rnaseq content type.
  * 
- * @ingroup tripal_bioproject
+ * @ingroup tripal_rnaseq
  */
 
 /**
- * Administrative page callbacks for the bioproject content type.
+ * Administrative page callbacks for the rnaeq content type.
  * 
  * @return
  *   A form API array describing an administrative form.
  *
- * @ingroup tripal_bioproject
+ * @ingroup tripal_rnaseq
  */
-function tripal_bioproject_admin() {
+function tripal_rnaseq_admin() {
 
   $form = array();
-  
-  $details = array(
-    'module' => 'tripal_sra',
-    'content_type' => 'chado_bioproject',
-    'options' => array(
-      '[project.name]' => 'BioProject Name Only'
-    ),
-    'unique_option' => '[project.name]' //*** fix  me
-  );
-  chado_add_admin_form_set_title($form, $form_state, $details);
+ 
+  // rnaseq is not a chado node, do not have corresponding table in chado database, 
+  // do not set title and url for rnaseq node. And the rnaseq node is only for load
+  // expression data, user do not care about the processing of loading files. 
 
-  $details = array(
-    'module' => 'tripal_sra',
-    'content_type' => 'chado_bioproject',
-    'options' => array( //*** fix these
-      '/bioproject/[project.project_id]' => 'BioProject ID',
-    ),
-  );
-  chado_add_admin_form_set_url($form, $form_state, $details);
-
-  $form['ontologies'] = array(
-    '#title' => t('BioProject Ontology Terms'),
-    '#type' => 'fieldset',
-    '#description' => t('Configuration settings for ontology term display.'),
-    '#collapsible' => TRUE,
-   ); 
-
-  $form['ontologies']['chado_bioproject_ontologies_to_display'] = array(
-    '#title' => t('Ontologies to Display'),
-    '#description' => t('List the sequence ontologies for which cvterms should be displayed (if present)')
-                      . t(' on the BioProject page. Ontologies should be separated by a space or newline.'),
+  $form['test'] = array(
+    '#title' => t('Test'),
+    '#description' => t('test for later'),
     '#type' => 'textarea',
-    '#default_value' => variable_get('chado_bioproject_ontologies_to_display'),
   );
 
  return system_settings_form($form);
@@ -63,9 +39,9 @@ function tripal_bioproject_admin() {
  * @return
  *   An HTML string that provides a link to enable the view.
  * 
- * @ingroup tripal_project
+ * @ingroup tripal_rnaseq
  */ 
-function tripal_bioproject_admin_bioprojects_view() {
+function tripal_rnaseq_admin_rnaseq_view() {
   $output = '';
   
   // Set the breadcrumbs. 

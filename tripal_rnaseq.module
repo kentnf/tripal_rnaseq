@@ -1,9 +1,11 @@
 <?php
 
-
+// node rnaseq
 require_once 'includes/tripal_rnaseq_exp_loader.inc';
 require_once 'includes/tripal_rnaseq.chado_node.inc';
 
+// theme preprocessing
+require_once "theme/tripal_rnaseq.theme.inc";
 
 /**
  * Implements hook_menu().
@@ -47,12 +49,27 @@ function tripal_rnaseq_menu() {
 /**
  * Implements hook_theme().
  */
-//function tripal_rnaseq_theme() {
-//
-//}
+function tripal_rnaseq_theme() {
+  $items = array();
+  $path = drupal_get_path('module', 'tripal_rnaseq');
 
-//function tripal_rnaseq_help() {
-//    
-//}
+  $items['tripal_rnaseq_help'] = array(
+    'template' => 'tripal_rnaseq_help',
+    'path' => "$path/theme",
+  );
+
+  $items['tripal_feature_rnaseq_expression'] = array(
+    'template' => 'tripal_feature_rnaseq_expression',
+    'path' => "$path/theme",
+  );
+
+  return $items;
+}
+
+function tripal_rnaseq_help($path, $arg) {
+  if ($path == 'admin/help#tripal_rnaseq') {
+    return theme('tripal_rnaseq_help');
+  }  
+}
 
 

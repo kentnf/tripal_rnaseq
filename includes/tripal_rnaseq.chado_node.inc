@@ -27,11 +27,6 @@ function tripal_rnaseq_node_info() {
         'singular' => t('RNASeq'),
         'plural' => t('RNASeq'),
       ),
-      'sync_filters' => array(
-        'type_id' => FALSE,
-        'organism_id' => FALSE,
-        'checkboxes' => array('name'),
-      ),
     )
   );
   return $nodes;
@@ -98,9 +93,6 @@ function chado_rnaseq_node_access($node, $op, $account) {
  */
 function chado_rnaseq_form($node, $form_state) {
   $form = array();
-  $expression_file = '/var/www/html/icugi3rd/sites/default/files/PI_rnaseq.txt';
-  tripal_rnaseq_exp_loader($expression_file, 50188, 29);
-
 
   // Not sure what this is for. Is this line necessary? 
   $form['#attribute']['enctype'] = 'multipart/form-data';
@@ -112,12 +104,14 @@ function chado_rnaseq_form($node, $form_state) {
     $rnaseq_path = property_exists($node, 'rnaseq_path') ? $node->rnaseq_path : $rnaseq->path;
     $rnaseq_term = property_exists($node, 'rnaseq_term') ? $node->rnaseq_term : $rnaseq->type_id;
     $bioproject_id = property_exists($node, 'bioproject_id') ? $node->bioproject_id : $rnaseq->project_id;
+    $organism_id = property_exists($node, 'organism_id') ? $node->organism_id : $rnaseq->organism_id;
   }
   else {
     $rnaseq_name = property_exists($node, 'rnaseq_name') ? $node->rnaseq_name : '';
     $rnaseq_path = property_exists($node, 'rnaseq_path') ? $node->rnaseq_path : '';
     $rnaseq_term = property_exists($node, 'rnaseq_term') ? $node->rnaseq_term : '';
     $bioproject_id = property_exists($node, 'bioproject_id') ? $node->bioproject_id : '';
+    $organism_id = property_exists($node, 'organism_id') ? $node->organism_id : '';
   }
 
   // Obtain the list of BioProjects. 
@@ -143,6 +137,23 @@ function chado_rnaseq_form($node, $form_state) {
     '#required' => TRUE,
     '#options' => $projects,
     '#suffix' => $lt_message,
+  );
+
+ 
+  $sql = 'SELECT organism_id, genus, species, common_name FROM {organism} ORDER BY genus';
+  $results = chado_query($sql);
+  $organisms = array();
+  while ($organism = $results->fetchObject()) {
+    $organisms[$organism->organism_id] = $organism->common_name;
+  }
+
+  $form['organism_id'] = array(
+    '#title' => t('Organism'),
+    '#type' => 'select',
+    '#description' => t('Select the organism, the feature must match the selected orgianism.'),
+    '#default_value' => $organism_id,
+    '#options' => $organisms,
+    '#required' => TRUE,
   );
 
   // select expression term 
@@ -208,16 +219,22 @@ function chado_rnaseq_validate($node, $form, &$form_state) {
   $node->rnaseq_name = trim($node->rnaseq_name);
   $node->rnaseq_path = trim($node->rnaseq_path);
 
-  dpm($node, 'validate');
-
   // Validate for an update. 
   // check if the changed bioproject_id and rnaseq term will affect other records
   // if not, pass for update
-  if (property_exists($node, 'rnaseq')) {
-    $args = array(':type_id'=> $node->rnaseq_term, ':project_id'=>$node->bioproject_id);
-    $status = db_query('SELECT nid FROM chado_rnaseq WHERE type_id=:type_id AND project_id=:project_id', $args)->fetchField();
-    dpm($status, 'update validate status');
+  $args = array(
+    ':type_id'=> $node->rnaseq_term, 
+    ':project_id'=>$node->bioproject_id, 
+    ':organism_id'=>$node->organism_id
+  );
+  $sql = "SELECT nid FROM chado_rnaseq
+    WHERE type_id=:type_id AND project_id=:project_id AND organism_id=:organism_id";
 
+
+  if (property_exists($node, 'rnaseq')) {
+    $status = db_query($sql, $args)->fetchField();
+    // ***** code here has problem *****
+    dpm($status, 'update validate status');
     if ($rr) {
       form_set_error('bioproject_name', t("Update cannot proceed. The bioproject
         '$node->bioproject_name' is already present in the database."));
@@ -227,18 +244,29 @@ function chado_rnaseq_validate($node, $form, &$form_state) {
     }
   }
   // Validate for an insert.
-  // the bioproject_id and rnaseq_term should unique
+  // the bioproject_id rnaseq_term, and organism_id should unique
   // the name, path can be any content
   else {
-    $args = array(':type_id'=> $node->rnaseq_term, ':project_id'=>$node->bioproject_id);
-    $status = db_query('SELECT nid FROM chado_rnaseq WHERE type_id=:type_id AND project_id=:project_id', $args)->fetchField();
+    $args = array(
+      ':type_id'=> $node->rnaseq_term, 
+      ':project_id'=>$node->bioproject_id, 
+      ':organism_id'=>$node->organism_id
+    );
+    $sql = "SELECT nid FROM chado_rnaseq
+      WHERE type_id=:type_id AND project_id=:project_id AND organism_id=:organism_id";
+    $status = db_query($sql, $args)->fetchField();
 
     if ($status) {
-      form_set_error('rnaseq_term', 'The RNASeq Expression Term should be unique with BioProject.');
-      form_set_error('bioproject_id', 'The RNASeq Expression Term should be unique with BioProject.');
+      form_set_error('rnaseq_term', 'BioProject, Expression Term and Organism should be unique.');
+      form_set_error('bioproject_id', 'BioProject, Expression Term and Organism should be unique.');
+      form_set_error('organism_id', 'BioProject, Expression Term and Organism should be unique.');
       tripal_report_error('tripal_rnaseq', TRIPAL_WARNING,
-        'Insert RNASeq Expression: record already exists: %type_id %project_id',
-        array('%type_id' => "Term = $node->rnaseq_term", '%project_id' => "Project = $node->bioproject_id")); 
+        'Insert RNASeq Expression: record already exists: %type_id %project_id %organism_id',
+        array(
+          '%type_id' => "Term = $node->rnaseq_term", 
+          '%project_id' => "Project = $node->bioproject_id",
+          '%project_id' => "Organism = $node->organism_id",
+        )); 
     }
   }
 }  
@@ -261,16 +289,17 @@ function chado_rnaseq_insert($node) {
   // Actually insert the record.
   // get a tripal job to insert database
   $record = new stdClass();
-  $record->nid        = $node->nid;
-  $record->name       = $node->rnaseq_name;
-  $record->path       = $node->rnaseq_path;
-  $record->type_id    = $node->rnaseq_term;
-  $record->project_id = $node->bioproject_id;
+  $record->nid         = $node->nid;
+  $record->name        = $node->rnaseq_name;
+  $record->path        = $node->rnaseq_path;
+  $record->type_id     = $node->rnaseq_term;
+  $record->project_id  = $node->bioproject_id;
+  $record->organism_id = $node->organism_id;
   $status = drupal_write_record('chado_rnaseq', $record);
  
   // add expression value to chado.feature_expression using tripal_job
   if ($node->rnaseq_load == 1) {
-    //tripal_rnaseq_exp_load_job($node);
+    tripal_rnaseq_exp_load_job($node);
   }
 } 
 
@@ -302,9 +331,12 @@ function chado_rnaseq_load($nodes) {
 function tripal_rnaseq_node_insert($node) {
   switch ($node->type) {
     case 'chado_rnaseq':
-      dpm($node, 'insert');
-      $node->title = $node->rnaseq->name;     
-      //chado_set_node_url($node);
+      dpm($node, 'tripal_rnaseq_node_insert');
+      if ($node->rnaseq) {
+        $node->title = $node->rnaseq->name;
+      } else {
+        $node->title = $node->rnaseq_name;
+      } 
       break;
   }
 }
@@ -312,7 +344,7 @@ function tripal_rnaseq_node_insert($node) {
 /**
  * Implements hook_node_update().
  * This node update is different with content type update.
- * it only update node title and url
+ * it only update node title
  *
  * @ingroup tripal_rnaseq
  */
@@ -320,7 +352,6 @@ function tripal_rnaseq_node_update($node) {
   switch ($node->type) {
     case 'chado_rnaseq':
       $node->title = $node->rnaseq->name;      
-      //chado_set_node_url($node);
       break; 
   }
 } 
@@ -337,10 +368,11 @@ function chado_rnaseq_update($node) {
   $node->rnaseq_path = trim($node->rnaseq_path);
 
   $values = array(
-    'name'       => $node->rnaseq_name,
-    'path'       => $node->rnaseq_path,
-    'type_id'    => $node->rnaseq_term,
-    'project_id' => $node->bioproject_id,
+    'name'        => $node->rnaseq_name,
+    'path'        => $node->rnaseq_path,
+    'type_id'     => $node->rnaseq_term,
+    'project_id'  => $node->bioproject_id,
+    'organism_id' => $node->organism_id,
   );
 
   $status = db_update('chado_rnaseq')->fields($values)->condition('nid', $node->nid)->execute();
@@ -378,3 +410,26 @@ function chado_rnaseq_delete($node) {
   ";
   drupal_set_message($message, 'status');
 } 
+
+/**
+ * Implements hook_node_view().
+ *
+ * @ingroup tripal_rnaseq
+ */
+
+function tripal_rnaseq_node_view($node, $view_mode, $langcode) {
+  switch ($node->type) {
+      case 'chado_feature':
+      if ($view_mode == 'full') {
+        $node->content['tripal_rnaseq'] = array(
+          '#markup' => theme('tripal_feature_rnaseq_expression', array('node' => $node)),
+          '#tripal_toc_id' => 'rnaseq_expression',
+          '#tripal_toc_title' => 'RNASeq Expression',
+          '#weight' => -99,
+        );
+      }
+      break;
+  }
+}
+
+

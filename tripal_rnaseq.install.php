@@ -25,6 +25,10 @@ function tripal_rnaseq_add_cvterms() {
     'RPKM' => 'Reads Per Kilobase of transcript per Million', 
     'FPKM' => 'Fragments Per Kilobase of transcript per Million',
     'RPM'  => 'Reads per Million',
+	'SD_raw_count' => 'SD for error bar of raw count',
+    'SD_RPKM' => 'SD for error bar of RPKM',
+    'SD_FPKM' => 'SD for error bar of FPKM',
+    'SD_RPM'  => 'SD for error bar of RPM'
   );
 
   tripal_insert_cv(
@@ -35,7 +39,7 @@ function tripal_rnaseq_add_cvterms() {
   foreach ($expression_term as $term => $description) {
     tripal_insert_cvterm(array(
       'name' => $term,
-      'def' => $description,
+      'definition' => $description,
       'cv_name' => 'tripal_rnaseq',
       'db_name' => 'tripal_sra',
     ));
@@ -70,6 +74,10 @@ function tripal_rnaseq_schema() {
         'description' => t('the project id.'),
         'type' => 'int', 'size' => 'big', 'not null' => true,
       ),
+      'organism_id' => array(
+        'description' => t('the organism id.'),
+        'type' => 'int', 'size' => 'big', 'not null' => true,
+      ),
     ),
     'indexes' => array(
       'name' => array('name'),
@@ -77,7 +85,7 @@ function tripal_rnaseq_schema() {
     'primary key' => array('nid'),
     'unique keys' => array(
       'nid' => array('nid'),
-      'type_project_id' => array('type_id', 'project_id'),
+      'type_project_id' => array('type_id', 'project_id', 'organism_id'),
     ),
   );
 
@@ -106,5 +114,4 @@ function tripal_rnaseq_update_1000() {
   //  )
   //);
 }
-
 
