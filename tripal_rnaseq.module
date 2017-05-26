@@ -43,7 +43,18 @@ function tripal_rnaseq_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 10,
   );
- 
+
+  // === home ===
+  $items['rnaseq/home'] = array(
+    'title' => 'RNASeq Expression',
+    'access arguments' => array('access content'),
+    'page callback' => 'theme',
+    'page arguments' => array('tripal_rnaseq_home'),
+    'type' => MENU_NORMAL_ITEM,
+    'weight' => 10,
+  );
+
+  return $items; 
 }
 
 /**
@@ -52,6 +63,11 @@ function tripal_rnaseq_menu() {
 function tripal_rnaseq_theme() {
   $items = array();
   $path = drupal_get_path('module', 'tripal_rnaseq');
+
+  $items['tripal_rnaseq_home'] = array(
+    'template' => 'tripal_rnaseq_home',
+    'path' => "$path/theme",
+  );
 
   $items['tripal_rnaseq_help'] = array(
     'template' => 'tripal_rnaseq_help',

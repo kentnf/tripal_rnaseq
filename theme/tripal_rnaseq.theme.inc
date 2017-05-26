@@ -46,6 +46,9 @@ function tripal_rnaseq_preprocess_tripal_feature_rnaseq_expression(&$variables) 
    * samples [array] 
    *   sample_id [obj]
    *     name = sample_name
+   *     factor1 = factor1_name    eg: treatment = Ethylene
+   *     factor2 = factor2_name    eg: stage = 10DAA
+   *     factorN = factorN_name    eg: tissue = leaf
    *     [other sample properties]
    */
 
@@ -86,8 +89,7 @@ function tripal_rnaseq_preprocess_tripal_feature_rnaseq_expression(&$variables) 
 
     $variables['experiments'] = $samples;
     $variables['rnaseq_exp'] = $rnaseq_exp;
-
-    dpm($samples_name_id);
+    //$variables['design'] = $design; 
 
     // retrieve experiment design for each project
     foreach ($rnaseq_exp as $project_id) {
@@ -100,16 +102,41 @@ function tripal_rnaseq_preprocess_tripal_feature_rnaseq_expression(&$variables) 
            'name' => 'experimental_design',
            'is_obsolete' => 0
         ),
-     );
-     $result = chado_select_record('projectprop', array('value'), $values);
-     if (!empty($result)) {
-       $matrix_str = preg_replace("!\s+!", " ", $result[0]->value);
-       dpm($matrix_str);
-       $matrix = str_getcsv($matrix_str, " ", '' , "\n");
-       dpm($matrix);
+      );
+      $result = chado_select_record('projectprop', array('value'), $values);
+      if (!empty($result)) {
+        $lines = explode("\n", $result[0]->value);
+        $title = explode(" ", preg_replace("!\s+!", " ", array_shift($lines)));
+        foreach ($lines as $line) {
+          $member = explode(" ", preg_replace("!\s+!", " ", $line));
+          $sample_name = $member[0];
+          $sample_id = $samples_name_id[$sample_name];
 
-       $rnaseq_exp[$project_id->project_id]->design = $result[0]->value;
-     }
+          for($i=1; $i<count($member); ++$i) {
+            $factor = $title[$i];
+            $factor_name = $member[$i];
+            $samples[$sample_id]->$factor = $factor_name;
+          }
+        }
+        // dpm($samples);
+
+        // generate designs according to factors
+        $factors = $title; 
+        array_shift($factors);
+        $designs = array();
+        $design_num = 0;
+        foreach ($factors as $f1) {
+          foreach ($factors as $f2) {
+            if ($f1 == $f2) {
+              continue;
+            }
+            $design_num++;
+            $designs[$design_num] = array($f1, $f2);
+          }
+        }
+
+        $rnaseq_exp[$project_id->project_id]->designs = $designs;
+      }
     }
 
     // convert the experiments and rnaseq_exp to json format
