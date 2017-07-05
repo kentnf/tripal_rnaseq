@@ -1,8 +1,59 @@
 
-//console.log(experiments);
-console.log(rnaseq_exps);
+rnaseq_heatmap(expression);
 
-rnaseq_histogram(rnaseq_exps,experiments);
+function rnaseq_heatmap(expression) {
+
+	z_value = new Array();
+	x_gene = new Array();
+	y_sample = new Array();
+        text = new Array();
+	var num = 0;
+	for (gene in expression) {
+		link = '<a href="/feature/gene/' + gene + '">' + gene + '</a>';
+		x_gene.push(link);
+		var values = new Array();
+		var txts = new Array();
+		num++;
+		for (sample in expression[gene] ) {
+			var value = Math.log2(expression[gene][sample]).toFixed(2);
+			txt = 'Sample: ' + sample + '<br>' + 'Gene: ' + gene + '<br>' + 'Value: ' + value;
+			values.push(value);
+			txts.push(txt);
+
+			if (num == 1) {
+				y_sample.push(sample);
+			}
+		}
+		z_value.push(values);
+		text.push(txts);
+	}
+
+	var data = [
+  	{
+		z: z_value,
+		x: y_sample,
+		y: x_gene,
+		type: 'heatmap',
+                text: text,
+		hoverinfo: 'text',
+  	}
+  	];
+
+
+	var layout = {
+		xaxis: {title: 'Samples', side: 'top'},
+		yaxis: {title: 'Expression of Genes (Log2RPKM)'},
+		margin: {l: 180, b: 20},
+	};
+
+	Plotly.newPlot('tripal-rnaseq-heatmap', data, layout);
+}
+
+
+//console.log(experiments);
+//console.log(rnaseq_exps);
+
+//rnaseq_histogram(rnaseq_exps,experiments);
 
 /**
  * plot histogram according to input factors
@@ -85,15 +136,14 @@ function rnaseq_histogram_plot(title_name, type_name, factor1, factor2, experime
 		y_value = new Array();
 		y_sd = new Array();
 
-		for (var exp_id in values) {
+		for (var exp_id in experiments) {
 			var exp_name = experiments[exp_id].name;
             var value = values[exp_id];
             var sd_value = 0;
             if ( typeof sd[exp_id] != 'undefined') {
                 sd_value = sd[exp_id];
             }
-            link = '<a href="/experiment/' + exp_id + '">' + exp_name + '</a>';
-            x_name.push(link);
+            x_name.push(exp_name);
             y_value.push(value);
             y_sd.push(sd_value);
         }
@@ -143,15 +193,9 @@ function rnaseq_histogram(rnaseq_exps, experiments) {
 	jQuery('#bioproject-id').on('change', function() {
         
 		var project_id = jQuery('#bioproject-id').val();
-		var title_name = '<a href="/bioproject/' + project_id + '">' + rnaseq_exps[project_id].name + '</a>';
+		var title_name = rnaseq_exps[project_id].name;
 		var designs = rnaseq_exps[project_id].designs;
-		var desc = rnaseq_exps[project_id].desc;
-		var desc_html = '<p><b>description: </b></p>';
-		for(var d in desc) {
-			desc_html += desc[d] + "<br>";
-		}
-		jQuery('#tripal-rnaseq-description').html(desc_html);
-		console.log(desc_html);
+
         // get expression values and SD by the order of value_types 
         var type_name; 
 		var sd_name;
@@ -203,7 +247,7 @@ function rnaseq_histogram(rnaseq_exps, experiments) {
 			jQuery('#tripal-rnaseq-matrix-select').html('');
 		}
 
-		//console.log(jQuery('#tripal-rnaseq-matrix-select'));
+		console.log(jQuery('#tripal-rnaseq-matrix-select'));
 	});
 }
 

@@ -161,7 +161,7 @@ function tripal_rnaseq_exp_loader($expression_file, $expression_term, $bioprojec
 
         // report insert status
         ++$num_seq;
-        print  "Insert RNASeq exp: " . $num_insert . ", Update sRNA exp: " . $num_update .
+        print  "Insert RNASeq exp: " . $num_insert . ", Update RNASeq exp: " . $num_update .
           ", RNASeq exp " . $num_seq . ". Memory: " .
           number_format(memory_get_usage()) . " bytes.\r";
       }

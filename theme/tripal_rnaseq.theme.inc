@@ -1,5 +1,19 @@
 <?php
 
+function tripal_rnaseq_preprocess_tripal_rnaseq_analysis(&$variables) {
+
+  $exp_json = json_encode($variables['exp']);
+  $data_js = "
+    var expression = $exp_json;
+  ";
+
+  $path = drupal_get_path('module', 'tripal_rnaseq');
+  drupal_add_js($path . '/theme/js/d3.min.js', array('type'=>'file'));
+  drupal_add_js($path . '/theme/js/plotly-latest.min.js', array('type'=>'file'));
+
+  drupal_add_js($data_js, array('type'=>'inline', 'scope'=>'footer','weight' => 50));
+  drupal_add_js($path . '/theme/js/tripal_rnaseq_heatmap_plotly.js', array('type'=>'file', 'scope'=>'footer','weight' => 100));
+}
 
 function tripal_rnaseq_preprocess_tripal_feature_rnaseq_expression(&$variables) {
 
@@ -105,9 +119,14 @@ function tripal_rnaseq_preprocess_tripal_feature_rnaseq_expression(&$variables) 
       );
       $result = chado_select_record('projectprop', array('value'), $values);
       if (!empty($result)) {
+        $description = array();
         $lines = explode("\n", $result[0]->value);
         $title = explode(" ", preg_replace("!\s+!", " ", array_shift($lines)));
         foreach ($lines as $line) {
+          if (preg_match("/^#/", $line)) {
+            $description[] = $line;
+            continue;
+          }
           $member = explode(" ", preg_replace("!\s+!", " ", $line));
           $sample_name = $member[0];
           $sample_id = $samples_name_id[$sample_name];
@@ -118,7 +137,6 @@ function tripal_rnaseq_preprocess_tripal_feature_rnaseq_expression(&$variables) 
             $samples[$sample_id]->$factor = $factor_name;
           }
         }
-        // dpm($samples);
 
         // generate designs according to factors
         $factors = $title; 
@@ -136,6 +154,7 @@ function tripal_rnaseq_preprocess_tripal_feature_rnaseq_expression(&$variables) 
         }
 
         $rnaseq_exp[$project_id->project_id]->designs = $designs;
+        $rnaseq_exp[$project_id->project_id]->desc = $description;
       }
     }
 

@@ -1,8 +1,15 @@
 <?php
 
+// api
+require_once 'api/tripal_rnaseq.api.inc';
+
 // node rnaseq
 require_once 'includes/tripal_rnaseq_exp_loader.inc';
 require_once 'includes/tripal_rnaseq.chado_node.inc';
+
+// tools
+require_once 'includes/tripal_rnaseq_analysis.inc';
+
 
 // theme preprocessing
 require_once "theme/tripal_rnaseq.theme.inc";
@@ -20,19 +27,6 @@ function tripal_rnaseq_menu() {
     'access arguments' => array('administer'),
   );
 
-  // RNA-seq loading/update.
-  /**
-  $items['admin/tripal/extension/tripal_rnaseq/load'] = array(
-    'title' => 'Load',
-    'description' => 'Load RNASeq expression.',
-    'access arguments' => array('administer'),
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('tripal_rnaseq_load'),
-    'type' => MENU_LOCAL_TASK,
-    'weight' => 5,
-  );
-  */
-
   // === help === 
   $items['admin/tripal/extension/tripal_rnaseq/help'] = array(
     'title' => 'Help',
@@ -46,7 +40,7 @@ function tripal_rnaseq_menu() {
 
   // === home ===
   $items['rnaseq/home'] = array(
-    'title' => 'RNASeq Expression',
+    'title' => 'Cucurbit Expression Atlas',
     'access arguments' => array('access content'),
     'page callback' => 'theme',
     'page arguments' => array('tripal_rnaseq_home'),
@@ -54,7 +48,33 @@ function tripal_rnaseq_menu() {
     'weight' => 10,
   );
 
-  return $items; 
+  // === project ===
+  $items['rnaseq/%/%'] = array(
+    'title' => 'Cucurbit Expression Atlas',
+    'access arguments' => array('access content'),
+    'page callback' => 'tripal_rnaseq_exp',
+    'page arguments' => array(1, 2),
+    'type' => MENU_NORMAL_ITEM,
+    'weight' => 10,
+  );
+
+  // === analysis === 
+  $items['rnaseq/analysis'] = array(
+    'title' => 'RNASeq analysis',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('tripal_rnaseq_analysis_form'),
+    'access arguments' => array('access content'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['rnaseq/analysisresult'] = array(
+    'title' => 'RNASeq analysis',
+    'page callback' => 'tripal_rnaseq_analysis_result',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
 }
 
 /**
@@ -74,8 +94,21 @@ function tripal_rnaseq_theme() {
     'path' => "$path/theme",
   );
 
+  // show project and sample information
+  $items['tripal_rnaseq_exp'] = array(
+    'template' => 'tripal_rnaseq_exp',
+    'path' => "$path/theme",
+  );
+
+  // show histrogram 
   $items['tripal_feature_rnaseq_expression'] = array(
     'template' => 'tripal_feature_rnaseq_expression',
+    'path' => "$path/theme",
+  );
+
+  // show heatmap of analysis result
+  $items['tripal_rnaseq_analysis'] = array(
+    'template' => 'tripal_rnaseq_analysis',
     'path' => "$path/theme",
   );
 
@@ -88,4 +121,10 @@ function tripal_rnaseq_help($path, $arg) {
   }  
 }
 
+function tripal_rnaseq_exp($org, $project_id) { 
+  // save select project and general organism to session
+  $_SESSION['tripal_rnaseq_analysis']['general_org'] = $org;
+  $_SESSION['tripal_rnaseq_analysis']['project_id']  = $project_id; 
+  return theme('tripal_rnaseq_exp', array('general_org' => $org, 'project_id'=>$project_id));
+}
 

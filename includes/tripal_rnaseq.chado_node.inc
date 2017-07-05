@@ -230,10 +230,10 @@ function chado_rnaseq_validate($node, $form, &$form_state) {
   $sql = "SELECT nid FROM chado_rnaseq
     WHERE type_id=:type_id AND project_id=:project_id AND organism_id=:organism_id";
 
-
-  if (property_exists($node, 'rnaseq')) {
+  if (property_exists($node, 'rnaseq_name')) {
     $status = db_query($sql, $args)->fetchField();
     // ***** code here has problem *****
+    // update validate status => 2633523
     dpm($status, 'update validate status');
     if ($rr) {
       form_set_error('bioproject_name', t("Update cannot proceed. The bioproject
