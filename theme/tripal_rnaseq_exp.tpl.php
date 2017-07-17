@@ -147,7 +147,7 @@ $bioproject = chado_expand_var($bioproject, 'field', 'project.description');
     <div class="tripal_bioproject-data-block-desc tripal-data-block-desc"><h4>Experiments of this BioProject:</h4></div>
     <?php
 
-    $headers = array('Experiment Name', 'Description', 'BioSample', 'Organism');
+    $headers = array('BioSample', 'Organism', 'Description');
     $rows = array();
     $enames = array();
     foreach ($experiments as $experiment) {
@@ -163,11 +163,22 @@ $bioproject = chado_expand_var($bioproject, 'field', 'project.description');
         continue; // skip if the experiment and general_org does not match
       }
 
+      // get prop of biosample for description
+      $values = array(
+         'biomaterial_id' => $experiment->biomaterial_id
+      );
+      $biosample = chado_generate_var('biomaterial', $values); 
+      $biosample = chado_expand_var($biosample, 'table', 'biomaterialprop');
+      $description = $biosample->description . ";  ";
+      foreach ($biosample->biomaterialprop as $prop) {
+        $cvterm = '<a href=# data-toggle="tooltip" title="'.$prop->type_id->definition.'">'.$prop->type_id->name.'</a>';
+        $description .= $cvterm . " : " . $prop->value . ";  ";
+      } 
+
       $rows[] = array(
-        l($experiment->exp_name, 'experiment/' . $experiment->experiment_id),
-        $experiment->description,
-        l($experiment->sample_name, 'biosample/' . $experiment->biomaterial_id),
-        $experiment->common_name,
+		l($experiment->sample_name, 'biosample/' . $experiment->biomaterial_id),
+		$experiment->common_name,
+        $description,
       );
       $enames[] = $experiment->exp_name;
       //dpm($experiment);

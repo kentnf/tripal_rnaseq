@@ -9,7 +9,7 @@ require_once 'includes/tripal_rnaseq.chado_node.inc';
 
 // tools
 require_once 'includes/tripal_rnaseq_analysis.inc';
-
+require_once 'includes/tripal_rnaseq_deg.inc';
 
 // theme preprocessing
 require_once "theme/tripal_rnaseq.theme.inc";
@@ -74,6 +74,23 @@ function tripal_rnaseq_menu() {
     'type' => MENU_CALLBACK,
   );
 
+  // === DEG ===
+  $items['rnaseq/deg'] = array(
+    'title' => 'Differential Express Analysis',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('tripal_rnaseq_deg_form'),
+    'access arguments' => array('access content'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['rnaseq/degresult/%'] = array(
+    'title' => 'Differential Express Analysis',
+    'page callback' => 'tripal_rnaseq_deg_job',
+    'page arguments' => array(2),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  ); 
+
   return $items;
 }
 
@@ -112,6 +129,18 @@ function tripal_rnaseq_theme() {
     'path' => "$path/theme",
   );
 
+  // show DEG job pending page
+  $items['tripal_rnaseq_deg_pending'] = array(
+    'template' => 'tripal_rnaseq_deg_pending',
+    'path' => "$path/theme",
+  );
+
+  // show DEG result
+  $items['tripal_rnaseq_deg_result'] = array(
+    'template' => 'tripal_rnaseq_deg_result',
+    'path' => "$path/theme",
+  );
+
   return $items;
 }
 
@@ -127,4 +156,33 @@ function tripal_rnaseq_exp($org, $project_id) {
   $_SESSION['tripal_rnaseq_analysis']['project_id']  = $project_id; 
   return theme('tripal_rnaseq_exp', array('general_org' => $org, 'project_id'=>$project_id));
 }
+
+function tripal_rnaseq_deg_job($job_string) {
+
+  $job_id = $job_string;
+  $job = tripal_get_job($job_id);
+
+  // 1) Job is in the Queue
+  if ($job->start_time === NULL AND $job->end_time == NULL) {
+    return theme('tripal_rnaseq_deg_pending', array('status_code' => 0, 'status' => 'Pending'));
+  }
+  // 2) Job has been Cancelled
+  elseif ($job->status == 'Cancelled') {
+    return theme('tripal_rnaseq_deg_pending', array('status_code' => 999, 'status' => 'Cancelled'));
+  }
+  // 3) Job is Complete
+  elseif ($job->end_time !== NULL) {
+    return theme('tripal_rnaseq_deg_result', array('job_id' => $job_id));
+  }
+  // 4) Job is in Progress
+  else {
+    return theme('tripal_rnaseq_deg_pending', array('status_code' => 1, 'status' => 'Running'));
+  }
+  return '';
+
+}
+
+
+
+
 

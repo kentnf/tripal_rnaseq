@@ -6,7 +6,7 @@
 function tripal_rnaseq_analysis_form($form, $form_state) {
 
   // drupal_set_title(t('New title for the node form'));
-  dpm($_SESSION['tripal_rnaseq_analysis']);
+  // dpm($_SESSION['tripal_rnaseq_analysis']);
   // dpm($_SESSION['tripal_rnaseq_heatmap']['experiments']);
 
   $project_id  = $_SESSION['tripal_rnaseq_analysis']['project_id'];
@@ -32,8 +32,8 @@ function tripal_rnaseq_analysis_form($form, $form_state) {
 
   $form['query'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Enter the list of IDs.'),
-    '#description' => t('description of input ids'),
+    '#title' => t('Enter the list of gene IDs.'),
+    '#description' => t('Only gene ID is accept, and the max number is 1000'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
   );
@@ -53,28 +53,11 @@ function tripal_rnaseq_analysis_form($form, $form_state) {
   // Textfield for submitting a ID list for query
   $form['query']['ID'] = array(
     '#type' => 'textarea',
-    '#title' => t('Enter gene IDs'),
+    '#title' => t(''),
     '#description'=>t('Enter gene IDs in the text area.'),
     '#default_value' => isset($_SESSION['tripal_rnaseq_analysis']['genes_str']) ? $_SESSION['tripal_rnaseq_analysis']['genes_str'] : '',
     '#prefix' => '<div id="id-textarea">',
     '#suffix' => '</div>',
-  );
-  // Upload a file as an alternative to enter a query ID
-  $form['#attributes']['enctype'] = 'multipart/form-data';
-  $form['query']['UPLOAD'] = array(
-    '#title' => 'Or upload the file containing the list of gene IDs:  ',
-    '#type' => 'managed_file',
-    '#description' => t('The file should be a plain-text
-  (.txt) file. Max size: %max_size. <strong>Don\'t forget to press the Upload button before
-  attempting to submit your ID.</strong>',
-      array(
-        '%max_size' => round(file_upload_max_size() / 1024 / 1024,1) . 'MB'
-      )
-    ),
-    '#upload_validators' => array(
-      //'file_validate_extensions' => array('txt'),
-      'file_validate_size' => array(file_upload_max_size()),
-    ),
   );
 
   $form['submit'] = array(
@@ -98,44 +81,46 @@ function tripal_rnaseq_analysis_form_validate($form, &$form_state) {
   }
   $organism_id = $form_state['values']['organism_id'];
 
-  // Validate Query
-  //----------------
-  // @todo: We are currently not validating uploaded files are valid FASTA.
-  // First check to see if we have an upload & if so then validate it.
-  $file = file_load($form_state['values']['UPLOAD']);
-
-  // If the $file is populated then this is a newly uploaded, temporary file.
-  if (is_object($file)) {
-    $form_state['qFlag'] = 'upQuery';
-    $form_state['upQuery_path'] = drupal_realpath($file->uri);
-  }
-  // Otherwise there was no file uploaded.
-  // Check if there was a query sequence entered in the texfield.
-  elseif (!empty($form_state['input']['ID'])) {
-    // Check to ensure that the query sequence entered is valid FASTA.
-    // if (validate_fasta_sequence($type, $form_state['input']['ID'])){
-    //  form_set_error('query', t('You need to provide a valid FASTA sequence '
-    //  . 'for the query. It should contain a FASTA header/definition line '
-    //  . 'followed by %molecule-type. For more information see the '
-    //  . '<a href="@url" target="_blank">NCBI FASTA Specification</a>.',
-    //    array(
-    //      '%molecule-type' => $molecule_type,
-    //      '@url' => 'http://www.ncbi.nlm.nih.gov/BLAST/blastcgihelp.shtml'
-    //  )));
-    //}
-    //else {
-      $form_state['qFlag'] = 'seqQuery';
-    //}
-  }
-  // Otherwise they didn't enter a query!!
-  else {
-    form_set_error('query', t('No gene IDs given. Enter IDs in the box provided '
-    . 'or upload a plain text file.'));
-  }
-
   // Validate ID list
-  if (!empty($form_state['values']['ID']) && $form_state['values']['ID'] == 'unknown dataset type') {
+  if (empty($form_state['values']['ID'])) {
     form_set_error('query', t('No gene IDs given.'));
+  }
+  else 
+  {
+    if ($form_state['values']['ID'] == 'unknown dataset type') {
+      form_set_error('query', t('No gene IDs given.'));
+    }
+    else {
+      $ids = explode("\n", $form_state['values']['ID'], -1);
+      $genes = array();
+      foreach ($ids as $id) {
+        $genes[trim($id)] = 1;
+      }
+
+      if (sizeof($genes) > 1000) {
+        form_set_error('query', t("Only accept IDs no more than 1000\n"));
+      }
+
+      $sql = "SELECT uniquename FROM chado.feature 
+         WHERE
+           organism_id = :organism_id AND 
+           uniquename in (:genes)
+      ";
+
+      $args = array(
+        ':organism_id' => $organism_id,
+        ':genes'=> array_keys($genes)
+      );
+      $results = db_query($sql, $args)->fetchAll();
+      foreach ($results as $r) {
+        unset($genes[$r->uniquename]);
+      }
+
+      if (sizeof($genes) > 0) {
+        $error_genes = implode("<br>\n", array_keys($genes)); 
+        form_set_error('query', t("Can not find below IDs, please check them:<br>\n" . $error_genes));
+      }
+    }
   }
 }
 
@@ -145,20 +130,6 @@ function tripal_rnaseq_analysis_form_validate($form, &$form_state) {
 function tripal_rnaseq_analysis_form_submit($form, $form_state) {
 
   // load gene list to array
-  // ** will do it later ***
-  /**
-  if (isset($form_state['qFlag'])) {
-    if ($form_state['qFlag'] == 'seqQuery') {
-      $seq_content = $form_state['values']['ID'];
-      $goenrichjob['gene_list'] = '/tmp/' . date('YMd_His') . '_GO_gene_list.txt';
-      file_put_contents ($goenrichjob['gene_list'], $seq_content);
-    }
-    elseif ($form_state['qFlag'] == 'upQuery') {
-      $goenrichjob['gene_list'] = $form_state['upQuery_path'];
-    }
-  }
-  */
-
   $id_content = $form_state['values']['ID'];
   $_SESSION['tripal_rnaseq_analysis']['genes_str'] = $id_content;
   $_SESSION['tripal_rnaseq_analysis']['organism_id'] = $form_state['values']['organism_id'];
@@ -230,7 +201,7 @@ function tripal_rnaseq_analysis_result() {
     }
   }
 
-  return theme('tripal_rnaseq_analysis', array('exp' => $exp));
+  return theme('tripal_rnaseq_analysis', array('exp' => $exp, 'project_id'=>$project_id));
 }
 
 /**

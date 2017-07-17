@@ -1,6 +1,39 @@
 <?php
 
+function tripal_rnaseq_preprocess_tripal_rnaseq_deg_result(&$variables) {
+
+  $tripal_job = tripal_get_job($variables['job_id']); 
+  $tripal_args = unserialize($tripal_job->arguments);
+  $variables['tripal_job']  = $tripal_job;
+  $variables['tripal_args'] = $tripal_args;
+
+  $deg_file = DRUPAL_ROOT . DIRECTORY_SEPARATOR . $tripal_args['output'];
+
+  // put output table result to array
+  if (is_readable($deg_file)) {
+    $deg_table = array();
+    $genes_str = '';
+    $fp = fopen($deg_file,'r');
+    if (($headers = fgetcsv($fp, 0, "\t")) !== FALSE) {
+      if ($headers) {
+        $deg_table[] = $headers;
+        while (($line = fgetcsv($fp, 0, "\t")) !== FALSE) {
+          if ($line) {
+             $deg_table[] = $line;
+             $genes_str.= $line[0] . "\n";
+          }
+        }
+      }
+    }
+    fclose($fp);
+    $variables['deg_table'] = $deg_table;
+    $_SESSION['tripal_rnaseq_analysis']['genes_str'] = $genes_str; 
+  }
+}
+
 function tripal_rnaseq_preprocess_tripal_rnaseq_analysis(&$variables) {
+
+  //dpm($variables);
 
   $exp_json = json_encode($variables['exp']);
   $data_js = "

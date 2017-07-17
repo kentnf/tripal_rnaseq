@@ -57,7 +57,7 @@ if (empty($result)) {
 $type_id = $result[0]->cvterm_id;
 
 // get type_id of sRNA experiment
-
+/**
 $values = array(
   'name' => 'miRNA-seq',
   'is_obsolete' => 0,
@@ -71,9 +71,10 @@ if (empty($result)) {
   drupal_set_message("tripal_rnaseq: can not find type of miRNA-Seq", 'error');
 }
 $sRNA_type_id = $result[0]->cvterm_id;
+*/
 
 // get all projects of rnaseult->species
-$sql = "SELECT E.experiment_id, E.name, T.project_id, T.name as project_name, S.biomaterial_id,
+$sql = "SELECT E.experiment_id, E.name, T.project_id, T.name as project_name, T.description, S.biomaterial_id,
      S.name as biomaterial_name, O.genus, O.species
     FROM chado.experiment E
     LEFT JOIN chado.biomaterial S ON E.biomaterial_id = S.biomaterial_id
@@ -94,17 +95,35 @@ $org_project = array(
 );
 
 foreach ($results as $result) {
+
+  $limit = 100;
+  $text = '';
+  if (str_word_count($result->description, 0) > $limit) {
+          $words = str_word_count($result->description, 2);
+          $pos = array_keys($words);
+          $text = substr($result->description, 0, $pos[$limit]) . '...';
+  } else {
+    $text = $result->description;
+  }
+
+  $tooltip = array(
+    'attributes' => array(
+      'data-toggle'=>'tooltip', 
+      'title'=> $text
+    )
+  );
+
   if ($result->genus == 'Citrullus') {
-    $org_project['watermelon'][] = l($result->project_name, 'rnaseq/wm/' . $result->project_id);
+    $org_project['watermelon'][] = l($result->project_name, 'rnaseq/wm/' . $result->project_id, $tooltip);
   }
   elseif ($result->species == 'sativus') {
-    $org_project['cucumber'][] = l($result->project_name, 'rnaseq/cu/' . $result->project_id);
+    $org_project['cucumber'][] = l($result->project_name, 'rnaseq/cu/' . $result->project_id, $tooltip);
   }
   elseif ($result->species == 'melo') {
-    $org_project['melon'][] = l($result->project_name, 'rnaseq/me/' . $result->project_id);
+    $org_project['melon'][] = l($result->project_name, 'rnaseq/me/' . $result->project_id, $tooltip);
   }
   elseif ($result->genus == 'Cucurbita') {
-    $org_project['Cucurbita'][] = l($result->project_name, 'rnaseq/pu/' . $result->project_id);
+    $org_project['Cucurbita'][] = l($result->project_name, 'rnaseq/pu/' . $result->project_id, $tooltip);
   }
   else {
     $unknown_org = $result->genus . " " . $result->species;

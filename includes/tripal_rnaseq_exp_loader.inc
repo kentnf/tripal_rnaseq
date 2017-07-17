@@ -56,20 +56,15 @@ function tripal_rnaseq_exp_loader($expression_file, $expression_term, $bioprojec
     if ($sample = fgetcsv($fh, 0, "\t")) {
       array_shift($sample);
       foreach ($sample as $sid) {
-        $rr = db_query("SELECT experiment_id, project_id FROM chado.experiment WHERE name = :sid", array(':sid' => $sid))->fetchAll();
+        $sql = "SELECT experiment_id, project_id FROM chado.experiment WHERE name = :sid AND project_id = :project_id";
+        $arg = array(':sid' => $sid, ':project_id' => $bioproject_id);
+        $rr = db_query($sql, $arg)->fetchAll();
         if (sizeof($rr) == 0) {
           watchdog('tripal_rnaseq_exp_loader',
             'Sample name :sample does not exist in experiment table', array(':sample' => $sid), WATCHDOG_ERROR);
           exit;
         }
         $sample_exp[$sid] = $rr[0]->experiment_id; // link sample name ($sid) and experiment_id ($rr)
-
-        // check if the BioProject is match (not required, but good for load/update expression for project) 
-        if ($rr[0]->project_id != $bioproject_id) {
-          watchdog('tripal_rnaseq_exp_loader',
-            'Experiment :sample  does not belong to BioProject :project_id', array(':sample' => $sid, ':project_id'=> $bioproject_id), WATCHDOG_ERROR);
-          exit;
-        }
       }
     }
 
