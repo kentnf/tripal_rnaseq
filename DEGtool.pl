@@ -26,6 +26,7 @@ Perl DEGs_pipeline.pl -s DESeq/edgeR -i raw_count -r rpkm {-a sampleA -b sampleB
 	-r rpkm_file 
 	-a sampleA
 	-b sampleB
+	-c sampleList (sampleA,sampleB,sampleC ... )
 	-f ratio cutoff
 	-p adjust pvalue cutoff
 	-o output (default = program)
@@ -52,7 +53,7 @@ GetOptions(
 );
 
 die $usage if $help;
-foreach my $param ( ($program, $raw_count, $rpkm_file, $sample_a, $sample_b, $ratio_cutoff, $padj_cutoff, $output) ) {
+foreach my $param ( ($program, $raw_count, $rpkm_file, $ratio_cutoff, $padj_cutoff, $output) ) {
 	die $usage unless $param;
 }
 
@@ -75,10 +76,20 @@ my $fc2 = sprintf("%.2f", 1/$ratio_cutoff);
 #================================================================
 
 # === put sample_a, sample_b, or sample_c to array
-my @comparison; 
-push(@comparison, "$sample_a\t$sample_b");
-if (defined $sample_c) {
-	push(@comparison, $sample_c);
+my @comparison;
+
+if (defined $sample_a && defined $sample_b) {
+	push(@comparison, "$sample_a\t$sample_b");
+}
+elsif (defined $sample_c) {
+	my @m = split(/,/, $sample_c);
+	die "[ERR]less than 3 sample for time series comparison: $sample_c\n" unless (scalar @m >= 3);
+	my $sample_c_char = join("\t", @m);
+	push(@comparison, $sample_c_char);
+}
+else {
+	print $usage;
+	exit;
 }
 
 # === do not use this function to store comp_list from file to hash
@@ -199,11 +210,11 @@ foreach my $comp (@comparison)
 		my $sum = 0;
 		my $raw_c = $gene;
 		foreach my $sample (@samples) {
-			$comp_sample{$sample} = 1;	  		# uniq sample name to hash
+			$comp_sample{$sample} = 1;	  				# uniq sample name to hash
 			my @c = split(/\t/, $$raw{$gene}{$sample});	# get raw count of replicate
-			$replicate{$sample} = scalar(@c); 		# get replicate number for sample
+			$replicate{$sample} = scalar(@c); 			# get replicate number for sample
 			foreach my $c (@c) { $sum = $sum + $c; }	# get total count for one gene 
-			$raw_c.="\t".$$raw{$gene}{$sample};		# output line
+			$raw_c.="\t".$$raw{$gene}{$sample};			# output line
 		}
 		print $rfh $raw_c."\n" if $sum > 0;
 	}
@@ -234,20 +245,20 @@ foreach my $comp (@comparison)
 			}
 			$gene_column = 0;
 		}
-		elsif ($program eq 'limma')
-		{
-			if (defined $paired) {
-				$r = generate_r_limma_pair($raw_file, $out_file, $samples[0], $samples[1], $replicate{$samples[0]}, $replicate{$samples[1]});
-				$pvalue_column = 6;
-			}
-			$gene_column = 1;
-		}
-		elsif ($program eq 'VST')
-		{
-			$r = generate_r_vst($raw_file, $out_file, $samples[0], $samples[1], $replicate{$samples[0]}, $replicate{$samples[1]});
-			$pvalue_column = 2;
-			$gene_column = 1;
-		}
+		#elsif ($program eq 'limma')
+		#{
+		#	if (defined $paired) {
+		#		$r = generate_r_limma_pair($raw_file, $out_file, $samples[0], $samples[1], $replicate{$samples[0]}, $replicate{$samples[1]});
+		#		$pvalue_column = 6;
+		#	}
+		#	$gene_column = 1;
+		#}
+		#elsif ($program eq 'VST')
+		#{
+		#	$r = generate_r_vst($raw_file, $out_file, $samples[0], $samples[1], $replicate{$samples[0]}, $replicate{$samples[1]});
+		#	$pvalue_column = 2;
+		#	$gene_column = 1;
+		#}
 		else
 		{
 			print "[ERR]program $program\n" and exit;
@@ -255,13 +266,13 @@ foreach my $comp (@comparison)
 	}
 	elsif (@samples > 2)
 	{
-		if ($program eq 'limma') 
-		{
-			$r = generate_r_limma_TS($raw_file, $out_file, \@samples, \%replicate);
-			$gene_column = 0;
-			$pvalue_column = -1;
-		}
-		elsif ($program eq 'edgeR')
+		#if ($program eq 'limma') 
+		#{
+		#	$r = generate_r_limma_TS($raw_file, $out_file, \@samples, \%replicate);
+		#	$gene_column = 0;
+		#	$pvalue_column = -1;
+		#}
+        if ($program eq 'edgeR')
 		{
 			print "edgeR code here\n";
 			$r = generate_r_edgeR_TS($raw_file, $out_file, \@samples, \%replicate);
@@ -438,23 +449,23 @@ foreach my $gene (sort keys %mean)
 	}
 }
 
-#================================================================
-# out put result
-#================================================================
+#===========================================
+# out put result for time series comparison
+#===========================================
+
 my $fnum = 0;
 foreach my $comp ( @comparisonT )
 {
 	my @samples = split(/\t/, $comp);
 	$fnum++;
-	my $output_file = "T".$fnum."_table.txt";
-	my $out1 = IO::File->new(">".$output_file) || die $!;
+	my $out1 = IO::File->new(">".$output) || die $!;
 
 	# output title
 	my $t = "GeneID";
 	foreach my $s (@samples) {
 		$t.="\t".$$title{$s}."\tmean";
 	}
-	$t.="\tLR/F\tPvalue\tFDR\n";
+	$t.="\tFDR\n";
 	print $out1 $t;
 
 	# output main tables
@@ -462,100 +473,86 @@ foreach my $comp ( @comparisonT )
 	foreach my $gene (sort keys %$RPKM)
 	{
 		$out_line = $gene;
-		foreach my $s (@samples) 
-		{
+		foreach my $s (@samples) {
 			my $mean = $mean{$gene}{$s};
-                	$mean = sprintf("%.2f", $mean);
+			$mean = sprintf("%.2f", $mean);
 			$out_line.="\t".$$RPKM{$gene}{$s}."\t".$mean;
 		}
 
-	
+		my $padj = 'NA';	
 		if (defined $padj{$gene}{$comp}) {
-			$out_line.="\t".$padj{$gene}{$comp};
 			my @anova = split(/\t/, $padj{$gene}{$comp});
-			$sig++ if $anova[2] < 0.05;
-		} else {
-			$out_line.="\tNA\tNA\tNA";
-		}
+			$padj = $anova[2];
+		} 
 
-		print $out1 $out_line."\n";
+		$out_line.="\t".$padj;
+		print $out1 $out_line."\n" and $sig++ if ($padj ne 'NA' && $padj < $padj_cutoff);
 	}
 	$out1->close;
 
 	print "No. of sig (adj p<0.05): $sig for $comp\n";
 }
 
-my $out1 = IO::File->new(">".$output."_all") || die $!;
+#================================
+# output for pairwise comparison
+#================================
+
+if (scalar @comparisonP > 0)
+{
+
 my $out2 = IO::File->new(">".$output) || die $!;
 
+# output title for each comparison
 my $t = "GeneID";
 foreach my $comp ( @comparisonP ) {
 	my ($sampleA, $sampleB) = split(/\t/, $comp);
 	$t.="\t".$$title{$sampleA}."\tmean\t".$$title{$sampleB}."\tmean\tratio\tadjust p";
 }
-print $out1 $t."\n";
 print $out2 $t."\n";
 
+# output rpkm and pvalue for each comparison
 my ($out_line, $sig); 
-my %report;
-
+my %report; # store number of sig changed gene for each comparison
 foreach my $gene (sort keys %$RPKM)
 {
 	$out_line = $gene;
 	$sig = 0;
-	
 	foreach my $comp ( @comparisonP )
 	{
 		my ($sampleA, $sampleB) = split(/\t/, $comp);
-	
-	      	#$out_line.="\t".$RPKM{$gene}{$sampleA}."\t".
-		#	$mean{$gene}{$sampleA}."\t".
-		#	$RPKM{$gene}{$sampleB}."\t".
-		#	$mean{$gene}{$sampleB}."\t".
-		#	$ratio{$gene}{$comp}."\t";
-
 		my $meanA = $mean{$gene}{$sampleA};
 		$meanA = sprintf("%.2f", $meanA);
 		my $meanB = $mean{$gene}{$sampleB};
-                $meanB = sprintf("%.2f", $meanB);
+		$meanB = sprintf("%.2f", $meanB);
 		my $ratio = $ratio{$gene}{$comp};
 		$ratio = sprintf("%.2f", $ratio);
 
-		$out_line.="\t".$$RPKM{$gene}{$sampleA}."\t".
-                        $meanA."\t".
-                        $$RPKM{$gene}{$sampleB}."\t".
-                        $meanB."\t".
-                        $ratio."\t";
-
+		my $padj = 'NA';
 		if (defined $padj{$gene}{$comp}) {
-			$out_line.=$padj{$gene}{$comp};
-		} else {
-			$out_line.="NA";
-		}
-
-		if (defined $padj{$gene}{$comp}) {
-			if (($ratio{$gene}{$comp} > $fc1 || $ratio{$gene}{$comp} < $fc2) && $padj{$gene}{$comp} < $padj_cutoff)
-			{
+			$padj = $padj{$gene}{$comp};
+			if (($ratio > $fc1 || $ratio < $fc2) && $padj < $padj_cutoff) {
 				$sig = 1;
 				$report{$comp}++;
 			}
-		}
+		} 
+
+		$out_line.="\t".$$RPKM{$gene}{$sampleA}."\t".$meanA."\t".
+						$$RPKM{$gene}{$sampleB}."\t".$meanB."\t".
+                        $ratio."\t".$padj;
 	}
-	if ( $sig ) { print $out2 $out_line."\n"; }
-	print $out1 $out_line."\n";
+	print $out2 $out_line."\n" if $sig == 1;
 }
-$out1->close;
 $out2->close;
 
-unlink($output."_all");
+}
 
 # report the number of DE genes for every comparison
-foreach my $comp (sort keys %report)
-{
-	my $num = $report{$comp};
-	$comp =~ s/\s+/ vs /;
-	print $comp."\t".$num."\n";
-}
+# foreach my $comp (sort keys %report)
+# {
+#	my $num = $report{$comp};
+#	$comp =~ s/\s+/ vs /;
+#	print $comp."\t".$num."\n";
+# }
 
 #================================================================
 # kentnf: subroutine for R code

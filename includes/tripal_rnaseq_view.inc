@@ -3,7 +3,7 @@
 /**
  * 
  */
-function tripal_rnaseq_analysis_form($form, $form_state) {
+function tripal_rnaseq_view_form($form, $form_state) {
 
   // drupal_set_title(t('New title for the node form'));
   // dpm($_SESSION['tripal_rnaseq_analysis']);
@@ -74,7 +74,7 @@ function tripal_rnaseq_analysis_form($form, $form_state) {
 /**
  * 
  */
-function tripal_rnaseq_analysis_form_validate($form, &$form_state) {
+function tripal_rnaseq_view_form_validate($form, &$form_state) {
 
   if (empty($form_state['values']['organism_id'])) {
     form_set_error('organism_id', t('No genome selected. Choose a reference genome from the list.'));
@@ -127,7 +127,7 @@ function tripal_rnaseq_analysis_form_validate($form, &$form_state) {
 /**
  *  
  */
-function tripal_rnaseq_analysis_form_submit($form, $form_state) {
+function tripal_rnaseq_view_form_submit($form, $form_state) {
 
   // load gene list to array
   $id_content = $form_state['values']['ID'];
@@ -147,7 +147,7 @@ function tripal_rnaseq_analysis_form_submit($form, $form_state) {
  * @return heatmap
  * 
  */
-function tripal_rnaseq_analysis_result() {
+function tripal_rnaseq_view_result() {
 
   // load data from session
   $project_id = $_SESSION['tripal_rnaseq_analysis']['project_id'];
@@ -192,25 +192,12 @@ function tripal_rnaseq_analysis_result() {
     ':genes'=>$genes);
   $results = db_query($sql, $args)->fetchAll();
   $exp = array();
-  $exp_min_value = 100;
   foreach ($results as $r) {
-    if ($r->value > 0 && $r->value < $exp_min_value) {
-      $exp_min_value = $r->value;
-    }
     if (isset($exp[$r->feature_name])) {
       $exp[$r->feature_name][$r->sample_name] = $r->value;
     } else {
       $exp[$r->feature_name] = array();
       $exp[$r->feature_name][$r->sample_name] = $r->value;
-    }
-  }
-  
-  // replace non-express value to min-express value
-  foreach ($exp as $feature_name => $exp_sample) {
-    foreach ($exp_sample as $sample_name => $exp_value) {
-      if ($exp[$feature_name][$sample_name] == 0) {
-        $exp[$feature_name][$sample_name] = $exp_min_value;
-      }
     }
   }
 
@@ -220,7 +207,7 @@ function tripal_rnaseq_analysis_result() {
 /**
  * AJAX: Replace the ID textarea with one containing an example.
  */
-function ajax_rnaseq_analysis_example_id_callback($form, $form_state) {
+function ajax_rnaseq_view_example_id_callback($form, $form_state) {
   $select_org = $form_state['values']['organism_id'];
   $example_ids = 'unknown';
 

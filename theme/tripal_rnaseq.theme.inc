@@ -2,12 +2,26 @@
 
 function tripal_rnaseq_preprocess_tripal_rnaseq_deg_result(&$variables) {
 
+  //Reference https://datatables.net/examples/styling/bootstrap.html
+  $path = drupal_get_path('module', 'tripal_rnaseq');
+  //drupal_add_js($path . '/theme/js/jquery-1.12.4.js', array('type'=>'file'));
+  drupal_add_js($path . '/theme/js/jquery.dataTables.min.js', array('type'=>'file'));
+  drupal_add_js($path . '/theme/js/dataTables.bootstrap.min.js', array('type'=>'file'));
+    $javascript = "
+      jQuery(document).ready(function() {
+        jQuery('#degtable').DataTable();
+      } );
+    ";
+    drupal_add_js($javascript, array('type'=>'inline','weight' => 50));
+  drupal_add_css($path . '/theme/dataTables.bootstrap.min.css/jquery.dataTables.min.js', array('type'=>'file'));
+
   $tripal_job = tripal_get_job($variables['job_id']); 
   $tripal_args = unserialize($tripal_job->arguments);
   $variables['tripal_job']  = $tripal_job;
   $variables['tripal_args'] = $tripal_args;
 
   $deg_file = DRUPAL_ROOT . DIRECTORY_SEPARATOR . $tripal_args['output'];
+  $num = 0;
 
   // put output table result to array
   if (is_readable($deg_file)) {
@@ -19,14 +33,18 @@ function tripal_rnaseq_preprocess_tripal_rnaseq_deg_result(&$variables) {
         $deg_table[] = $headers;
         while (($line = fgetcsv($fp, 0, "\t")) !== FALSE) {
           if ($line) {
-             $deg_table[] = $line;
-             $genes_str.= $line[0] . "\n";
+            $num++;
+            if ($num < 3001) {
+              $deg_table[] = $line;
+            }
+            $genes_str.= $line[0] . "\n";
           }
         }
       }
     }
     fclose($fp);
     $variables['deg_table'] = $deg_table;
+    $variables['deg_num'] = $num;
     $_SESSION['tripal_rnaseq_analysis']['genes_str'] = $genes_str; 
   }
 }

@@ -4,8 +4,9 @@
  * Display the results of a DEG job execution
  */
 
-// display information for DEG analysis
+// dpm($tripal_args);
 
+// display information for DEG analysis
 $project_id  = $_SESSION['tripal_rnaseq_analysis']['project_id'];
 $organism_id = $_SESSION['tripal_rnaseq_analysis']['organism_id']; 
 
@@ -35,11 +36,23 @@ $organism_common_name = l($organism->common_name, 'organism/' . $organism_id);
 ?>
   <p>
     <b>Reference Geome:</b> <?php print $organism_common_name ?> <br>
-    <b>Sample A:</b> <?php print $tripal_args['sampleA'] ?> <br>
-    <b>Sample B:</b> <?php print $tripal_args['sampleB'] ?> <br>
+
+    <?php if ($tripal_args['type'] == 'p') { ?>
+      <b>Sample A:</b> <?php print $tripal_args['sampleA'] ?> <br>
+      <b>Sample B:</b> <?php print $tripal_args['sampleB'] ?> <br>
+    <?php } else { ?>
+      <b>Samples:</b> <?php print $tripal_args['sampleC'] ?> <br>
+    <?php } ?>
+
     <b>DEG Analysis Program:</b> <?php print $tripal_args['rscript'] ?> <br>
+
+    <?php if ($tripal_args['type'] == 'p') { ?>
     <b>Ratio cutoff:</b> <?php print $tripal_args['ratio'] ?> <br>
+    <?php } ?>
+
     <b>Adjust P-value cutoff:</b> <?php print $tripal_args['adjp'] ?> <br>
+    <b>No. of significantly chagned genes:</b> <?php print $deg_num ?> <br>
+    <b>*Note</b>: only top <b><font color=red>3000</font></b> significantly changed genes show in below table, or you can<br>
   </p>
 <?php
 
@@ -49,15 +62,15 @@ if ($deg_table) {
     // display links for downstream analyis
     if (sizeof($deg_table) > 0) {
       ?>
-      <p><b>Download Differentially Expressed Genes:</b> 
+      <p><b>Download full list of <?php print $deg_num ?> significantly changed genes:</b> 
         <a href="<?php print '../../' . $tripal_args['output']; ?>">Tab-delimited Format</a> <br>
       </p>
 
-      <p><b>Avaiable analyses for Differentially Expressed Genes:</b> <br>
+      <p><b>Avaiable analyses for significantly changed genes:</b> <br>
         <a href=/goenrich>GO Ernichment</a> |
         <a href=/funcat>GO Slim Gene Classifiction</a> |
         <a href=/pwyenrich>Pathway Ernichment</a> |
-        <a href=/batchquery>Batch Query</a>
+        <a href=/batchquery data-toggle="tooltip" title="retrive sequence, function annotation, or family information fo the significantly changed genes">Batch Query</a>
       </p>
       <br>
       </div></div>
@@ -84,7 +97,7 @@ if ($deg_table) {
     $variables = array(
       'header' => $header_data,
       'rows' => $rows_data,
-      'attributes' => array('class' => 'table'),
+      'attributes' => array('class' => 'table table-striped table-bordered', 'id'=>'degtable'),
     );
     print theme('table', $variables);
 }

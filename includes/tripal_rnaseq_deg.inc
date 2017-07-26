@@ -6,8 +6,8 @@
 function tripal_rnaseq_deg_form($form, $form_state) {
 
   // drupal_set_title(t('New title for the node form'));
-  dpm($_SESSION['tripal_rnaseq_analysis']);
-  dpm($_SESSION['tripal_rnaseq_heatmap']);
+  // dpm($_SESSION['tripal_rnaseq_analysis']);
+  // dpm($_SESSION['tripal_rnaseq_heatmap']);
 
   $project_id  = $_SESSION['tripal_rnaseq_analysis']['project_id'];
   $general_org = $_SESSION['tripal_rnaseq_analysis']['general_org'];
@@ -35,41 +35,74 @@ function tripal_rnaseq_deg_form($form, $form_state) {
     '#description' => t('select reference genome'),
   );
 
-  // select two samples from experiments (biosample)
+  // pairwise or time series
+  $type_opts = array(
+    'p' => 'pairwise comparison',
+    't' => 'time series comparison',
+  );
+
   $sample_opts = array();
   foreach ($_SESSION['tripal_rnaseq_heatmap']['experiments'] as $sname) {
     $sample_opts[$sname] = $sname;
   }
 
-  $form['pairwise'] = array(
+  $form['comparison'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Select two samples for pairwise comparison.'),
-    '#description' => t('description of input ids'),
+    '#title' => t('Select comparison type and samples.'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
   );
 
-  $form['pairwise']['sample_a'] = array(
+  $form['comparison']['type'] = array(
     '#type' => 'select',
-    '#title' => t('Sample A'),
-    '#options' => $sample_opts,
-    '#prefix' => '<span style="float: left; padding: 10px;">',
-    '#suffix' => '</span>',
+    '#title' => 'Select Comparison Type',
+    '#options' => $type_opts,
+    '#required' => TRUE,
   );
 
-  $form['pairwise']['sample_b'] = array(
-    '#type' => 'select',
-    '#title' => t('VS. Sample B'),
-    '#options' => $sample_opts,
-    '#prefix' => '<span style="float: left; padding: 10px;">',
-    '#suffix' => '</span>',
-  );
+    $form['comparison']['sample_a'] = array(
+      '#type' => 'select',
+      '#title' => t('Sample A'),
+      '#options' => $sample_opts,
+      '#prefix' => '<br><b>For pairwise comparison, please select different samples:</b><br><span style="float: left; padding: 10px;">',
+      '#suffix' => '</span>',
+    );
+
+    $form['comparison']['sample_b'] = array(
+      '#type' => 'select',
+      '#title' => t('VS. Sample B'),
+      '#options' => $sample_opts,
+      '#prefix' => '<span style="float: left; padding: 10px;">',
+      '#suffix' => '</span><br><br><br><br>',
+    );
+
+    $n = 0;
+    foreach ($sample_opts as $sample_id => $sample_name) {
+      $label = "sample_" . $sample_id;
+      $n++;
+      if ($n == 1) {
+        $form['comparison'][$label] = array(
+          '#type' => 'checkbox',
+          '#title' => $sample_name,
+          //'#default_value' => isset($_SESSION['tripal_synview_search']['REFORG'][$org_id]) ? 1 : 0,
+          '#prefix' => '<br><b>For time series comparison, please select three samples at least:</b><br><span style="float: left; display: block; margin: 10px;">',
+          '#suffix' => '</span>',
+        );
+      } else {
+        $form['comparison'][$label] = array(
+          '#type' => 'checkbox',
+          '#title' => $sample_name,
+          //'#default_value' => isset($_SESSION['tripal_synview_search']['REFORG'][$org_id]) ? 1 : 0,
+          '#prefix' => '<span style="float: left; display: block; margin: 10px;">',
+          '#suffix' => '</span>',
+        );
+      }
+    }
 
   // advance option
   $form['advance'] = array(
     '#type' => 'fieldset',
     '#title' => t('Advanced Options.'),
-    //'#description' => t('description of input ids'),
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );
@@ -102,44 +135,6 @@ function tripal_rnaseq_deg_form($form, $form_state) {
     '#suffix' => '<br><br>',
   );
 
-  /**
-  $form['timeseries'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Select three or more samples for time series comparison.'),
-    '#description' => t('description of input ids'),
-    '#collapsible' => TRUE,
-    '#collapsed' => FALSE,
-  );
-
-  $n = 0;
-  foreach ($sample_opts as $sample_id => $sample_name) {
-    $label = "sample_" . $sample_id;
-    $n++;
-    if ($n == 1) {
-      $form['timeseries'][$label] = array(
-        '#type' => 'checkbox',
-        '#title' => $sample_name,
-        //'#default_value' => isset($_SESSION['tripal_synview_search']['REFORG'][$org_id]) ? 1 : 0,
-        '#prefix' => '<br><b>Please choose three samples at least:</b><br><span style="float: left; display: block; margin: 10px;">',
-        '#suffix' => '</span>',
-      );
-    } else {
-      $form['timeseries'][$label] = array(
-        '#type' => 'checkbox',
-        '#title' => $sample_name,
-        //'#default_value' => isset($_SESSION['tripal_synview_search']['REFORG'][$org_id]) ? 1 : 0,
-        '#prefix' => '<span style="float: left; display: block; margin: 10px;">',
-        '#suffix' => '</span>',
-      );
-    }
-  }
-
-  $form['submit_b'] = array(
-    '#type' => 'submit', 
-    '#value' => t('Submit'),
-  );
-  */
-
   $form['#prefix'] = '<div class="row"> <div class="col-md-8 col-md-offset-2">';
   $form['#suffix'] = '</div> </div>';
 
@@ -153,14 +148,37 @@ function tripal_rnaseq_deg_form_validate($form, &$form_state) {
 
   // check user input
   $org_id     = $form_state['values']['organism_id'];
-  $sample_a   = $form_state['values']['sample_a'];
-  $sample_b   = $form_state['values']['sample_b'];
+  $type       = $form_state['values']['type'];  
   $ratio      = $form_state['values']['ratio'];
   $adjp       = $form_state['values']['adjp'];
   $project_id = $form_state['values']['project_id'];
+  $program    = $form_state['values']['program'];
 
-  if ($sample_a == $sample_b) {
-    form_set_error('pairwise', t('Please select different samples for pairwise comparison.'));
+  if ($type == 'p') {
+    $sample_a = $form_state['values']['sample_a'];
+	$sample_b = $form_state['values']['sample_b'];
+    if ($sample_a == $sample_b) { 
+      form_set_error('comparison', t('Please select different samples for pairwise comparison.'));
+    }
+  } 
+  else {
+    $select_sample = array();
+    foreach ($_SESSION['tripal_rnaseq_heatmap']['experiments'] as $sname) {
+      $label = "sample_" . $sname;
+      if ($form_state['values'][$label]) {
+        $select_sample[$label] = $sname;
+      }
+    }
+
+    if (count($select_sample) < 3) {
+      form_set_error('comparison', t('Please select 3 samples at least.'));
+    }
+
+    if ($program != 'edgeR') {
+      form_set_error('comparison', t('Please select edgeR for time series comparison.'));
+    }
+
+    $form_state['values']['sample_c'] = $select_sample;
   }
 
   if (!empty($ratio) && is_numeric($ratio) && $ratio > 1) {
@@ -179,14 +197,25 @@ function tripal_rnaseq_deg_form_validate($form, &$form_state) {
  */
 function tripal_rnaseq_deg_form_submit($form, $form_state) {
 
-  // check user input
+  // get user input
   $org_id     = $form_state['values']['organism_id'];
-  $sample_a   = $form_state['values']['sample_a'];
-  $sample_b   = $form_state['values']['sample_b'];
+  $type       = $form_state['values']['type'];
   $ratio      = $form_state['values']['ratio'];
   $adjp       = $form_state['values']['adjp'];
   $project_id = $form_state['values']['project_id'];
   $rscript    = $form_state['values']['program'];
+
+  // set select org to session
+  $_SESSION['tripal_rnaseq_analysis']['organism_id'] = $org_id;
+
+  $sample_a = null; $sample_b = null; $sample_c = null;
+  if ($type == 'p') {
+    $sample_a = $form_state['values']['sample_a'];
+    $sample_b = $form_state['values']['sample_b'];
+  } 
+  else {
+    $sample_c = implode(",", $form_state['values']['sample_c']); 
+  }
 
   // check if the data has biological duplicate
   // then check rpkm and raw count is exist 
@@ -217,8 +246,11 @@ function tripal_rnaseq_deg_form_submit($form, $form_state) {
     $error = 1;
   }
 
+  #dpm($form_state);
+  #dpm($raw_count_file);
+
   // submit job for DEG
-  //$error = 1; 
+  #$error = 1; // for debug 
   if (!$error) {
     global $user;
     $output_dir = variable_get('file_public_path', conf_path() . DIRECTORY_SEPARATOR .  'files') . 
@@ -231,16 +263,18 @@ function tripal_rnaseq_deg_form_submit($form, $form_state) {
       'rscript' => $rscript,
       'raw'     => $raw_count_file,
       'rpkm'    => $rpkm_file,
+      'type'    => $type,
       'sampleA' => $sample_a,
-      'sampleB' => $sample_b, 
+      'sampleB' => $sample_b,
+      'sampleC' => $sample_c, 
       'ratio'   => $ratio,
       'adjp'    => $adjp,
       'output'  => $output_file,
     );
 
     $job_id = tripal_add_job(
-      t('DEG identification between @sampleA and @sampleB for @project_name', array(
-        '@sampleA'=>$sample_a, '@sampleB'=>$sample_b, '@project_name' =>$project_name)),
+      t('DEG identification for @project_name', array(
+        '@project_name' =>$project_name)),
       'tripal_rnaseq',
       'tripal_rnaseq_deg_job_run',
       $job_args,
@@ -258,14 +292,18 @@ function tripal_rnaseq_deg_form_submit($form, $form_state) {
 /**
  * tripal_rnaseq_deg_job_run 
  */
-function tripal_rnaseq_deg_job_run($program, $rscript, $raw, $rpkm, $sampleA, $sampleB, $ratio, $adjp, $output, $job_id = NULL) {
+function tripal_rnaseq_deg_job_run($program, $rscript, $raw, $rpkm, $type, $sampleA, $sampleB, $sampleC, $ratio, $adjp, $output, $job_id = NULL) {
 
   $deg_cmd = escapeshellarg($program);
   $deg_cmd.= ' -s ' . escapeshellarg($rscript);
   $deg_cmd.= ' -i ' . escapeshellarg($raw);
   $deg_cmd.= ' -r ' . escapeshellarg($rpkm);
-  $deg_cmd.= ' -a ' . escapeshellarg($sampleA);
-  $deg_cmd.= ' -b ' . escapeshellarg($sampleB);
+  if ($type == 'p') {
+    $deg_cmd.= ' -a ' . escapeshellarg($sampleA);
+    $deg_cmd.= ' -b ' . escapeshellarg($sampleB);
+  } else {
+    $deg_cmd.= ' -c ' . escapeshellarg($sampleC);
+  }
   $deg_cmd.= ' -f ' . escapeshellarg($ratio);
   $deg_cmd.= ' -p ' . escapeshellarg($adjp);
   $deg_cmd.= ' -o ' . escapeshellarg($output);
@@ -354,48 +392,64 @@ function tripal_rnaseq_deg_result() {
 }
 
 /**
- * AJAX: Replace the ID textarea with one containing an example.
+ * AJAX: Replace the comparison form with the selection of type.
  */
-function ajax_rnaseq_deg_example_id_callback($form, $form_state) {
-  $select_org = $form_state['values']['organism_id'];
-  $example_ids = 'unknown';
+function ajax_rnaseq_deg_type_callback($form, $form_state) {
 
-  // get gene type_id 
-  $values = array(
-    'name' => 'gene',
-    'is_obsolete' => 0,
-    'cv_id' => array (
-       'name' => 'sequence',
-     ),
-  );
-  $result = chado_select_record('cvterm', array('cvterm_id', 'name'), $values);
-  if (empty($result)) {
-    drupal_set_message("tripal_rnaseq: can not find type_of of gene", 'error');
-  }
-  $type_id = $result[0]->cvterm_id;
+  $comparison_type = $form_state['values']['type'];
 
-  // query db to get example ID
-  $sql = "SELECT F.feature_id, F.name FROM chado.feature F
-    WHERE F.type_id = :type_id AND F.organism_id = :organism_id 
-    LIMIT 20
-  ";
-  $args = array(':type_id' => $type_id, ':organism_id' => $select_org);
-  $result = db_query($sql, $args);
- 
-  $example_ids = '';
-  foreach ($result as $gene) {
-    $example_ids = $example_ids . $gene->name . "\n"; 
+  // get sample list
+  $sample_opts = array();
+  foreach ($_SESSION['tripal_rnaseq_heatmap']['experiments'] as $sname) {
+    $sample_opts[$sname] = $sname;
   }
 
-  // If the Show Example checkbox is true then put the example in the textfield
-  if ($form_state['values']['example_id']) {
-    $form['query']['ID']['#value'] = $example_ids;
-  }
-  // Otherwise we want to remove the already displayed example.
-  else {
-    $form['query']['ID']['#value'] = '';
+  if ($comparison_type == "p") {
+
+    $form['comparison']['sample_a'] = array(
+      '#type' => 'select',
+      '#title' => t('Sample A'),
+      '#options' => $sample_opts,
+      '#prefix' => '<span style="float: left; padding: 10px;">',
+      '#suffix' => '</span>',
+    );
+
+    $form['comparison']['sample_b'] = array(
+      '#type' => 'select',
+      '#title' => t('VS. Sample B'),
+      '#options' => $sample_opts,
+      '#prefix' => '<span style="float: left; padding: 10px;">',
+      '#suffix' => '</span>',
+    );
+
+  } else {
+    $form['comparison']['#title'] = t('Select 3 samples at least for time series comparison.');
+    $n = 0;
+    foreach ($sample_opts as $sample_id => $sample_name) {
+      $label = "sample_" . $sample_id;
+      $n++;
+      if ($n == 1) {
+        $form['comparison'][$label] = array(
+          '#type' => 'checkbox',
+          '#title' => $sample_name,
+          //'#default_value' => isset($_SESSION['tripal_synview_search']['REFORG'][$org_id]) ? 1 : 0,
+          '#prefix' => '<br><b>Please choose three samples at least:</b><br><span style="float: left; display: block; margin: 10px;">',
+          '#suffix' => '</span>',
+        );
+      } else {
+        $form['comparison'][$label] = array(
+          '#type' => 'checkbox',
+          '#title' => $sample_name,
+          //'#default_value' => isset($_SESSION['tripal_synview_search']['REFORG'][$org_id]) ? 1 : 0,
+          '#prefix' => '<span style="float: left; display: block; margin: 10px;">',
+          '#suffix' => '</span>',
+        );
+      }
+    }
+
   }
 
-  return $form['query']['ID'];
+  $form['comparison']['#validated'] = TRUE;
+  return $form['comparison'];
 }
 

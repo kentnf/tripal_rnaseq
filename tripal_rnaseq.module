@@ -10,6 +10,7 @@ require_once 'includes/tripal_rnaseq.chado_node.inc';
 // tools
 require_once 'includes/tripal_rnaseq_analysis.inc';
 require_once 'includes/tripal_rnaseq_deg.inc';
+require_once 'includes/tripal_rnaseq_view.inc';
 
 // theme preprocessing
 require_once "theme/tripal_rnaseq.theme.inc";
@@ -91,6 +92,22 @@ function tripal_rnaseq_menu() {
     'type' => MENU_CALLBACK,
   ); 
 
+  // === view ===
+  $items['rnaseq/view'] = array(
+    'title' => 'View RNA-Seq Expression',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('tripal_rnaseq_view_form'),
+    'access arguments' => array('access content'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['rnaseq/viewresult'] = array(
+    'title' => 'View RNA-Seq Expression',
+    'page callback' => 'tripal_rnaseq_view_result',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+
   return $items;
 }
 
@@ -141,6 +158,11 @@ function tripal_rnaseq_theme() {
     'path' => "$path/theme",
   );
 
+  // show view result
+  $items['tripal_rnaseq_view'] = array(
+    'template' => 'tripal_rnaseq_view',
+    'path' => "$path/theme",
+  );
   return $items;
 }
 

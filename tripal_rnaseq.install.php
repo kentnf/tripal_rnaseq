@@ -12,6 +12,8 @@
  * @ingroup tripal_rnaseq
  */
 function tripal_rnaseq_install() {
+  tripal_create_files_dir('tripal_rnaseq');
+  tripal_create_files_dir('tripal_rnaseq_exp');
   tripal_rnaseq_add_cvterms();
 }
 
