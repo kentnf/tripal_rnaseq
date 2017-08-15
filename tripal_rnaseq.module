@@ -8,9 +8,9 @@ require_once 'includes/tripal_rnaseq_exp_loader.inc';
 require_once 'includes/tripal_rnaseq.chado_node.inc';
 
 // tools
-require_once 'includes/tripal_rnaseq_analysis.inc';
+require_once 'includes/tripal_rnaseq_heatmap.inc';
 require_once 'includes/tripal_rnaseq_deg.inc';
-require_once 'includes/tripal_rnaseq_view.inc';
+require_once 'includes/tripal_rnaseq_jbrowse.inc';
 
 // theme preprocessing
 require_once "theme/tripal_rnaseq.theme.inc";
@@ -51,33 +51,33 @@ function tripal_rnaseq_menu() {
 
   // === project ===
   $items['rnaseq/%/%'] = array(
-    'title' => 'Cucurbit Expression Atlas',
+    'title' => 'Cucurbit Expression Atlas -- Project & Sample Information',
     'access arguments' => array('access content'),
-    'page callback' => 'tripal_rnaseq_exp',
+    'page callback' => 'tripal_rnaseq_info',
     'page arguments' => array(1, 2),
     'type' => MENU_NORMAL_ITEM,
     'weight' => 10,
   );
 
-  // === analysis === 
-  $items['rnaseq/analysis'] = array(
-    'title' => 'RNASeq analysis',
+  // === heatmap === 
+  $items['rnaseq/heatmap'] = array(
+    'title' => 'Cucurbit Expression Atlas -- Heatmap',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('tripal_rnaseq_analysis_form'),
+    'page arguments' => array('tripal_rnaseq_heatmap_form'),
     'access arguments' => array('access content'),
     'type' => MENU_NORMAL_ITEM,
   );
 
-  $items['rnaseq/analysisresult'] = array(
-    'title' => 'RNASeq analysis',
-    'page callback' => 'tripal_rnaseq_analysis_result',
+  $items['rnaseq/heatmapresult'] = array(
+    'title' => 'Cucurbit Expression Atlas -- Heatmap',
+    'page callback' => 'tripal_rnaseq_heatmap_result',
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
   );
 
   // === DEG ===
   $items['rnaseq/deg'] = array(
-    'title' => 'Differential Express Analysis',
+    'title' => 'Cucurbit Expression Atlas -- Differential Express Analysis',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('tripal_rnaseq_deg_form'),
     'access arguments' => array('access content'),
@@ -85,36 +85,28 @@ function tripal_rnaseq_menu() {
   );
 
   $items['rnaseq/degresult/%'] = array(
-    'title' => 'Differential Express Analysis',
+    'title' => 'Cucurbit Expression Atlas -- Differential Express Analysis',
     'page callback' => 'tripal_rnaseq_deg_job',
     'page arguments' => array(2),
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
   ); 
 
-  // === view ===
-  $items['rnaseq/view'] = array(
-    'title' => 'View RNA-Seq Expression',
+  // === view (JBrowse) ===
+  $items['rnaseq/jbrowse'] = array(
+    'title' => 'Cucurbit Expression Atlas -- View RNA-Seq Expression',
     'page callback' => 'theme',
-    'page arguments' => array('tripal_rnaseq_view_jbrowse'),
+    'page arguments' => array('tripal_rnaseq_jbrowse'),
     'access arguments' => array('access content'),
     'type' => MENU_NORMAL_ITEM,
   );
 
-
-  //$items['rnaseq/view'] = array(
-  //  'title' => 'View RNA-Seq Expression',
-  //  'page callback' => 'drupal_get_form',
-  //  'page arguments' => array('tripal_rnaseq_view_form'),
-  //  'access arguments' => array('access content'),
-  //  'type' => MENU_NORMAL_ITEM,
-  //);
-
-  $items['rnaseq/viewresult'] = array(
-    'title' => 'View RNA-Seq Expression',
-    'page callback' => 'tripal_rnaseq_view_result',
+  $items['rnaseq/selectorg'] = array(
+    'title' => 'Cucurbit Expression Atlas -- View RNA-Seq Expression',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('tripal_rnaseq_jbrowse_form'),
     'access arguments' => array('access content'),
-    'type' => MENU_CALLBACK,
+    'type' => MENU_NORMAL_ITEM,
   );
 
   return $items;
@@ -138,8 +130,8 @@ function tripal_rnaseq_theme() {
   );
 
   // show project and sample information
-  $items['tripal_rnaseq_exp'] = array(
-    'template' => 'tripal_rnaseq_exp',
+  $items['tripal_rnaseq_info'] = array(
+    'template' => 'tripal_rnaseq_info',
     'path' => "$path/theme",
   );
 
@@ -150,8 +142,8 @@ function tripal_rnaseq_theme() {
   );
 
   // show heatmap of analysis result
-  $items['tripal_rnaseq_analysis'] = array(
-    'template' => 'tripal_rnaseq_analysis',
+  $items['tripal_rnaseq_heatmap'] = array(
+    'template' => 'tripal_rnaseq_heatmap',
     'path' => "$path/theme",
   );
 
@@ -168,19 +160,12 @@ function tripal_rnaseq_theme() {
   );
 
   // show view result
-  $items['tripal_rnaseq_view_jbrowse'] = array(
-    'template' => 'tripal_rnaseq_view_jbrowse',
+  $items['tripal_rnaseq_jbrowse'] = array(
+    'template' => 'tripal_rnaseq_jbrowse',
     'path' => "$path/theme",
   );
 
-  $items['tripal_rnaseq_view'] = array(
-    'template' => 'tripal_rnaseq_view',
-    'path' => "$path/theme",
-  );
   return $items;
-
-
-
 }
 
 function tripal_rnaseq_help($path, $arg) {
@@ -189,11 +174,11 @@ function tripal_rnaseq_help($path, $arg) {
   }  
 }
 
-function tripal_rnaseq_exp($org, $project_id) { 
+function tripal_rnaseq_info($org, $project_id) { 
   // save select project and general organism to session
   $_SESSION['tripal_rnaseq_analysis']['general_org'] = $org;
   $_SESSION['tripal_rnaseq_analysis']['project_id']  = $project_id; 
-  return theme('tripal_rnaseq_exp', array('general_org' => $org, 'project_id'=>$project_id));
+  return theme('tripal_rnaseq_info', array('general_org' => $org, 'project_id'=>$project_id));
 }
 
 function tripal_rnaseq_deg_job($job_string) {
@@ -220,8 +205,4 @@ function tripal_rnaseq_deg_job($job_string) {
   return '';
 
 }
-
-
-
-
 

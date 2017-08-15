@@ -556,7 +556,8 @@ if (scalar @comparisonP > 0)
 	my %report; # store number of sig changed gene for each comparison
 	foreach my $gene (sort keys %$RPKM)
 	{
-		my $function = $anno{$gene};
+		my $function = 'unknown';
+        $function = $anno{$gene} if defined $anno{$gene};
 		$out_line = $gene."\t".$function;
 
 		$sig = 0;

@@ -38,10 +38,9 @@ function tripal_rnaseq_submenu() {
 
   $menu = array();
   $menu[] = l('Home', 'rnaseq/home');
-  //$menu[] = l('Search', 'rnaseq/search');
-  $menu[] = l('Anaysis', 'rnaseq/analysis');
+  $menu[] = l('Heatmap', 'rnaseq/heatmap');
   $menu[] = l('DEGs', 'rnaseq/deg');
-  $menu[] = l('Expression Viewer', 'rnaseq/view');
+  $menu[] = l('Expression Viewer', 'rnaseq/jbrowse');
   $menu_html = '<h4 class="text-center text-info">' . implode(" | ", $menu) . '</h4><br>';
   return $menu_html;
 }
@@ -53,7 +52,12 @@ function tripal_rnaseq_get_reference_options($general_org) {
 
   $results = chado_select_record('organism', array('organism_id','common_name', 'genus', 'species'), array());
   foreach ($results as $result) {
-    if ($result->genus == 'Citrullus' and $general_org == 'wm') {
+    // skip the general orgamism name
+    if ($result->organism_id > 9) {
+       continue;
+    }
+    // get organism options base on general organism short name
+    elseif ($result->genus == 'Citrullus' and $general_org == 'wm') {
       $organism_opts[$result->organism_id] = $result->common_name;
     }
     elseif ($result->species == 'sativus' and $general_org == 'cu') {
@@ -71,9 +75,4 @@ function tripal_rnaseq_get_reference_options($general_org) {
   }
   return $organism_opts;
 }
-
-
-
-
-
 

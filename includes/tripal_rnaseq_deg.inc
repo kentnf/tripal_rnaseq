@@ -7,7 +7,13 @@ function tripal_rnaseq_deg_form($form, $form_state) {
 
   // drupal_set_title(t('New title for the node form'));
   // dpm($_SESSION['tripal_rnaseq_analysis']);
-  // dpm($_SESSION['tripal_rnaseq_heatmap']);
+  if (isset($_SESSION['tripal_rnaseq_analysis']['project_id']) 
+      && isset($_SESSION['tripal_rnaseq_analysis']['general_org']) ) {
+
+  } else {
+    drupal_set_message(t('Can not find any bioproject, please select from RNA-seq Collection.'), 'warning');
+    drupal_goto("rnaseq/home");
+  }
 
   $project_id  = $_SESSION['tripal_rnaseq_analysis']['project_id'];
   $general_org = $_SESSION['tripal_rnaseq_analysis']['general_org'];
@@ -42,7 +48,7 @@ function tripal_rnaseq_deg_form($form, $form_state) {
   );
 
   $sample_opts = array();
-  foreach ($_SESSION['tripal_rnaseq_heatmap']['experiments'] as $sname) {
+  foreach ($_SESSION['tripal_rnaseq_analysis']['samples'] as $sname) {
     $sample_opts[$sname] = $sname;
   }
 
@@ -163,7 +169,7 @@ function tripal_rnaseq_deg_form_validate($form, &$form_state) {
   } 
   else {
     $select_sample = array();
-    foreach ($_SESSION['tripal_rnaseq_heatmap']['experiments'] as $sname) {
+    foreach ($_SESSION['tripal_rnaseq_analysis']['samples'] as $sname) {
       $label = "sample_" . $sname;
       if ($form_state['values'][$label]) {
         $select_sample[$label] = $sname;
@@ -356,7 +362,7 @@ function tripal_rnaseq_deg_result() {
     $genes[] = rtrim($gene);
   }
 
-  $enames = $_SESSION['tripal_rnaseq_heatmap']['experiments']; 
+  $enames = $_SESSION['tripal_rnaseq_analysis']['samples']; 
 
   // get expression value
   $sql = "SELECT EXP.value,
@@ -410,7 +416,7 @@ function ajax_rnaseq_deg_type_callback($form, $form_state) {
 
   // get sample list
   $sample_opts = array();
-  foreach ($_SESSION['tripal_rnaseq_heatmap']['experiments'] as $sname) {
+  foreach ($_SESSION['tripal_rnaseq_analysis']['samples'] as $sname) {
     $sample_opts[$sname] = $sname;
   }
 

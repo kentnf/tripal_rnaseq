@@ -1,5 +1,8 @@
 <?php
 
+// clean the rnaseq session
+unset($_SESSION['tripal_rnaseq_analysis']);
+
 ?>
 
 <div class="row"> <div class="col-md-12">
@@ -16,23 +19,6 @@ mismatches. The resulting reads/read pairs were aligned to the corresponding gen
 <a href="https://ccb.jhu.edu/software/hisat" target="_blank">HISAT</a> allowing up to two mismatches. 
 The expression of transcripts was measured and normalized to FPKM (fragments per kilobase 
 of exon per million mapped fragments) base on all mapped read.
-</p>
-
-<h3>Method Description for small RNA-seq</h3>
-<p>
-The small RNA datasets were combined by removing redundancies (same sequences,
-same lengths, and same directions). Small RNAs derived from rRNA and tRNA were
-discarded. sRNAs <b>with transcripts per million (TPM) >=50 in at least one 
-sample and with length of 19-24 nt</b> were included in the miRNA identification.
-These sRNAs were aligned to the correspinding genome sequence and the flanking
-sequences (200bp to each side) of sRNAs with no more than 20 unique genome hits
-were extracted and folded with the <a href="http://rna.tbi.univie.ac.at" target="_blank">RNAfold</a> program.
-The structures were then checked with <a href="http://bartellab.wi.mit.edu/software.html" target="_blank">miRcheck</a>
-to identify potential miRNA candidates. miRNA candidates were then compared to
-<a href="http://www.mirbase.org" target="_blank">miRBase</a> to identify
-conserved miRNA candidates (up to two mismatches). The miRNA targets were
-identified using the <a href="/mirtarget" target="_blank">target prediction tool</a>
-developed and implemented in the database.
 </p>
 
 <h3>RNA-seq Collection</h3>
@@ -131,7 +117,7 @@ foreach ($results as $result) {
   }
 }
 
-// display htm
+// display html
 foreach ($org_project as $general_name => $projects) {
   print "<div class=\"col-md-3\"><center>";
   $projects = array_unique($projects);

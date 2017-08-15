@@ -53,7 +53,7 @@ function tripal_rnaseq_preprocess_tripal_rnaseq_deg_result(&$variables) {
   }
 }
 
-function tripal_rnaseq_preprocess_tripal_rnaseq_analysis(&$variables) {
+function tripal_rnaseq_preprocess_tripal_rnaseq_heatmap(&$variables) {
 
   //dpm($variables);
 
