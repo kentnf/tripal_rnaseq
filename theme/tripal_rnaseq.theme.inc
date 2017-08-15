@@ -22,6 +22,7 @@ function tripal_rnaseq_preprocess_tripal_rnaseq_deg_result(&$variables) {
 
   $deg_file = DRUPAL_ROOT . DIRECTORY_SEPARATOR . $tripal_args['output'];
   $num = 0;
+  $num_cutoff = 100;
 
   // put output table result to array
   if (is_readable($deg_file)) {
@@ -34,7 +35,9 @@ function tripal_rnaseq_preprocess_tripal_rnaseq_deg_result(&$variables) {
         while (($line = fgetcsv($fp, 0, "\t")) !== FALSE) {
           if ($line) {
             $num++;
-            if ($num < 3001) {
+            if ($num <= $num_cutoff) {
+              $padj = array_pop($line);
+              array_push($line, sprintf('%.2e', $padj));
               $deg_table[] = $line;
             }
             $genes_str.= $line[0] . "\n";
@@ -45,6 +48,7 @@ function tripal_rnaseq_preprocess_tripal_rnaseq_deg_result(&$variables) {
     fclose($fp);
     $variables['deg_table'] = $deg_table;
     $variables['deg_num'] = $num;
+    $variables['display_num'] = $num_cutoff;
     $_SESSION['tripal_rnaseq_analysis']['genes_str'] = $genes_str; 
   }
 }

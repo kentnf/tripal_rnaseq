@@ -246,6 +246,14 @@ function tripal_rnaseq_deg_form_submit($form, $form_state) {
     $error = 1;
   }
 
+  $func_dir = variable_get('file_public_path', conf_path() . DIRECTORY_SEPARATOR .  'files') .
+      DIRECTORY_SEPARATOR . 'tripal' . DIRECTORY_SEPARATOR . 'tripal_rnaseq_anno';
+  $func_file = $func_dir . DIRECTORY_SEPARATOR . 'org' . $org_id . '_annotation.txt';
+
+  if (!is_readable($func_file)) {
+    $error = 1;
+  }
+
   #dpm($form_state);
   #dpm($raw_count_file);
 
@@ -270,6 +278,7 @@ function tripal_rnaseq_deg_form_submit($form, $form_state) {
       'ratio'   => $ratio,
       'adjp'    => $adjp,
       'output'  => $output_file,
+      'func'    => $func_file,
     );
 
     $job_id = tripal_add_job(
@@ -292,7 +301,7 @@ function tripal_rnaseq_deg_form_submit($form, $form_state) {
 /**
  * tripal_rnaseq_deg_job_run 
  */
-function tripal_rnaseq_deg_job_run($program, $rscript, $raw, $rpkm, $type, $sampleA, $sampleB, $sampleC, $ratio, $adjp, $output, $job_id = NULL) {
+function tripal_rnaseq_deg_job_run($program, $rscript, $raw, $rpkm, $type, $sampleA, $sampleB, $sampleC, $ratio, $adjp, $output, $func, $job_id = NULL) {
 
   $deg_cmd = escapeshellarg($program);
   $deg_cmd.= ' -s ' . escapeshellarg($rscript);
@@ -307,6 +316,7 @@ function tripal_rnaseq_deg_job_run($program, $rscript, $raw, $rpkm, $type, $samp
   $deg_cmd.= ' -f ' . escapeshellarg($ratio);
   $deg_cmd.= ' -p ' . escapeshellarg($adjp);
   $deg_cmd.= ' -o ' . escapeshellarg($output);
+  $deg_cmd.= ' -x ' . escapeshellarg($func);
 
   print "\nExecuting the command for DEG:\n" . $deg_cmd . "\n";
   system($deg_cmd);

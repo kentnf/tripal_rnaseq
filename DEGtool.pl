@@ -1,6 +1,5 @@
 #!/usr/bin/perl
-=head
-
+=head2
 Plan: 1. make this pipeline to modular
       2. integrade NOISeq to it
       3. add DE_filter tool for filter sig DEG with different qvalue and fold change
@@ -10,7 +9,6 @@ Plan: 1. make this pipeline to modular
 05/23/2013:combine DESeq and edgeR to one program
 06/12/2012:generate pdf for each comparison, including PCA plot, MA plot, and BCV plot.
 06/11/2012:identify DE genes using edgeR
-
 =cut
 
 use strict;
@@ -22,6 +20,7 @@ my $usage = qq'
 Perl DEGs_pipeline.pl -s DESeq/edgeR -i raw_count -r rpkm {-a sampleA -b sampleB | -c sampleC} -f 2 -p 0.05 -o output
 
 	-s program (default = DESeq)
+	-x function annotation file
 	-i raw_count 
 	-r rpkm_file 
 	-a sampleA
@@ -37,7 +36,7 @@ Perl DEGs_pipeline.pl -s DESeq/edgeR -i raw_count -r rpkm {-a sampleA -b sampleB
 
 ';
 
-my ($help, $program, $raw_count, $rpkm_file, $sample_a, $sample_b, $sample_c, $ratio_cutoff, $padj_cutoff, $paired, $output);
+my ($help, $program, $raw_count, $rpkm_file, $sample_a, $sample_b, $sample_c, $ratio_cutoff, $padj_cutoff, $paired, $output, $annotation);
 GetOptions(
 	"h"	=> \$help,
 	"s=s"   => \$program,
@@ -48,12 +47,12 @@ GetOptions(
 	"c=s"	=> \$sample_c,
 	"f=s"	=> \$ratio_cutoff,
 	"p=s"	=> \$padj_cutoff,
-	#"a"	=> \$paired,
+	"x=s"	=> \$annotation,
 	"o=s"	=> \$output
 );
 
 die $usage if $help;
-foreach my $param ( ($program, $raw_count, $rpkm_file, $ratio_cutoff, $padj_cutoff, $output) ) {
+foreach my $param ( ($program, $raw_count, $rpkm_file, $ratio_cutoff, $padj_cutoff, $output, $annotation) ) {
 	die $usage unless $param;
 }
 
@@ -119,6 +118,19 @@ foreach my $comp (@comparison) {
 		push (@comparisonT, $comp);
 	}
 }
+
+#================================================================
+# load function annotation to hash
+# key: gene id; value: ahrd annotation
+#================================================================
+my %anno;
+my $fha = IO::File->new($annotation) || die $!;
+while(<$fha>) {
+	chomp;
+	my @a = split(/\t/, $_);
+	$anno{$a[0]} = $a[1];
+}
+$fha->close;
 
 #================================================================
 # parse raw count dataset					
@@ -452,27 +464,38 @@ foreach my $gene (sort keys %mean)
 #===========================================
 # out put result for time series comparison
 #===========================================
+my $output_all = $output;
+if ($output =~ m/deg\.txt/) {
+	$output_all =~ s/deg\.txt/deg\.all\.txt/;
+}
+
+die "[ERR]output file $output, $output_all\n" if $output_all eq $output;
 
 my $fnum = 0;
 foreach my $comp ( @comparisonT )
 {
 	my @samples = split(/\t/, $comp);
 	$fnum++;
-	my $out1 = IO::File->new(">".$output) || die $!;
+
+	my %p_hash; # save the table to hash according to pvalue; 
+
+	my $out2 = IO::File->new(">".$output_all) || die $!;
 
 	# output title
-	my $t = "GeneID";
+	my $t = "GeneID\tDescription";
 	foreach my $s (@samples) {
 		$t.="\t".$$title{$s}."\tmean";
 	}
 	$t.="\tFDR\n";
-	print $out1 $t;
+	print $out2 $t;
 
 	# output main tables
 	my $out_line; my $sig = 0;
 	foreach my $gene (sort keys %$RPKM)
 	{
-		$out_line = $gene;
+		my $function = $anno{$gene};
+		$out_line = $gene."\t".$function;
+
 		foreach my $s (@samples) {
 			my $mean = $mean{$gene}{$s};
 			$mean = sprintf("%.2f", $mean);
@@ -486,11 +509,28 @@ foreach my $comp ( @comparisonT )
 		} 
 
 		$out_line.="\t".$padj;
-		print $out1 $out_line."\n" and $sig++ if ($padj ne 'NA' && $padj < $padj_cutoff);
+
+		if ($padj ne 'NA' && $padj < $padj_cutoff) {
+			$sig++;
+			push(@{$p_hash{$padj}}, $out_line);
+		}
+
+		print $out2 $out_line."\n";
 	}
-	$out1->close;
+	$out2->close;
 
 	print "No. of sig (adj p<0.05): $sig for $comp\n";
+
+	# output DEG table for significatnly changed genes
+	my $out1 = IO::File->new(">".$output) || die $!;
+	print $out1 $t;
+	foreach my $p (sort keys %p_hash) {
+		my @line = @{$p_hash{$p}};
+		foreach my $line (@line) {
+			print $out1 $line."\n";
+		}
+	}
+	$out1->close;
 }
 
 #================================
@@ -499,51 +539,71 @@ foreach my $comp ( @comparisonT )
 
 if (scalar @comparisonP > 0)
 {
+	my %p_hash;
 
-my $out2 = IO::File->new(">".$output) || die $!;
+	my $out2 = IO::File->new(">".$output_all) || die $!;
 
-# output title for each comparison
-my $t = "GeneID";
-foreach my $comp ( @comparisonP ) {
-	my ($sampleA, $sampleB) = split(/\t/, $comp);
-	$t.="\t".$$title{$sampleA}."\tmean\t".$$title{$sampleB}."\tmean\tratio\tadjust p";
-}
-print $out2 $t."\n";
-
-# output rpkm and pvalue for each comparison
-my ($out_line, $sig); 
-my %report; # store number of sig changed gene for each comparison
-foreach my $gene (sort keys %$RPKM)
-{
-	$out_line = $gene;
-	$sig = 0;
-	foreach my $comp ( @comparisonP )
-	{
+	# output title for each comparison
+	my $t = "GeneID\tDescription";
+	foreach my $comp ( @comparisonP ) {
 		my ($sampleA, $sampleB) = split(/\t/, $comp);
-		my $meanA = $mean{$gene}{$sampleA};
-		$meanA = sprintf("%.2f", $meanA);
-		my $meanB = $mean{$gene}{$sampleB};
-		$meanB = sprintf("%.2f", $meanB);
-		my $ratio = $ratio{$gene}{$comp};
-		$ratio = sprintf("%.2f", $ratio);
+		$t.="\t".$$title{$sampleA}."\tmean\t".$$title{$sampleB}."\tmean\tratio\tadjust p";
+	}
+	print $out2 $t."\n";
 
-		my $padj = 'NA';
-		if (defined $padj{$gene}{$comp}) {
-			$padj = $padj{$gene}{$comp};
-			if (($ratio > $fc1 || $ratio < $fc2) && $padj < $padj_cutoff) {
-				$sig = 1;
-				$report{$comp}++;
-			}
-		} 
+	# output rpkm and pvalue for each comparison
+	my ($out_line, $sig); 
+	my %report; # store number of sig changed gene for each comparison
+	foreach my $gene (sort keys %$RPKM)
+	{
+		my $function = $anno{$gene};
+		$out_line = $gene."\t".$function;
 
-		$out_line.="\t".$$RPKM{$gene}{$sampleA}."\t".$meanA."\t".
+		$sig = 0;
+		my $min_padj = 1;
+		foreach my $comp ( @comparisonP )
+		{
+			my ($sampleA, $sampleB) = split(/\t/, $comp);
+			my $meanA = $mean{$gene}{$sampleA};
+			$meanA = sprintf("%.2f", $meanA);
+			my $meanB = $mean{$gene}{$sampleB};
+			$meanB = sprintf("%.2f", $meanB);
+			my $ratio = $ratio{$gene}{$comp};
+			$ratio = sprintf("%.2f", $ratio);
+
+			my $padj = 'NA';
+			if (defined $padj{$gene}{$comp}) {
+				$padj = $padj{$gene}{$comp};
+				$min_padj = $padj if $padj < $min_padj;
+				if (($ratio > $fc1 || $ratio < $fc2) && $padj < $padj_cutoff) {
+					$sig = 1;
+					$report{$comp}++;
+				}
+			} 
+
+			$out_line.="\t".$$RPKM{$gene}{$sampleA}."\t".$meanA."\t".
 						$$RPKM{$gene}{$sampleB}."\t".$meanB."\t".
                         $ratio."\t".$padj;
-	}
-	print $out2 $out_line."\n" if $sig == 1;
-}
-$out2->close;
+		}
 
+		if ($sig == 1) {
+			push(@{$p_hash{$min_padj}}, $out_line);	
+		}
+
+		print $out2 $out_line."\n";
+	}
+	$out2->close;
+
+    # output DEG table for significatnly changed genes
+    my $out1 = IO::File->new(">".$output) || die $!;
+	print $out1 $t."\n";
+	foreach my $p (sort {$a<=>$b} keys %p_hash) {
+		my @line = @{$p_hash{$p}};
+		foreach my $line (@line) {
+			print $out1 $line."\n";
+		}
+	}
+	$out1->close;
 }
 
 # report the number of DE genes for every comparison

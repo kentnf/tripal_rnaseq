@@ -52,7 +52,7 @@ $organism_common_name = l($organism->common_name, 'organism/' . $organism_id);
 
     <b>Adjust P-value cutoff:</b> <?php print $tripal_args['adjp'] ?> <br>
     <b>No. of significantly chagned genes:</b> <?php print $deg_num ?> <br>
-    <b>*Note</b>: only top <b><font color=red>3000</font></b> significantly changed genes show in below table, or you can<br>
+    <b>*Note</b>: only top <b><font color=red><?php print $display_num ?></font></b> significantly changed genes show in below table, or you can<br>
   </p>
 <?php
 
@@ -61,9 +61,15 @@ if ($deg_table) {
 
     // display links for downstream analyis
     if (sizeof($deg_table) > 0) {
+      $output = $tripal_args['output'];
+      $output_all = $output;
+      $output_all = preg_replace('/deg\.txt/', 'deg.all.txt', $output_all);
       ?>
       <p><b>Download full list of <?php print $deg_num ?> significantly changed genes:</b> 
-        <a href="<?php print '../../' . $tripal_args['output']; ?>">Tab-delimited Format</a> <br>
+        <a href="<?php print '../../' . $output; ?>">Tab-delimited Format</a> <br>
+       
+        <b>Download DEG analysis result for all genes:</b>
+        <a href="<?php print '../../' . $output_all; ?>">Tab-delimited Format</a> <br>
       </p>
 
       <p><b>Avaiable analyses for significantly changed genes:</b> <br>

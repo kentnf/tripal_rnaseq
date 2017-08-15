@@ -95,11 +95,20 @@ function tripal_rnaseq_menu() {
   // === view ===
   $items['rnaseq/view'] = array(
     'title' => 'View RNA-Seq Expression',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('tripal_rnaseq_view_form'),
+    'page callback' => 'theme',
+    'page arguments' => array('tripal_rnaseq_view_jbrowse'),
     'access arguments' => array('access content'),
     'type' => MENU_NORMAL_ITEM,
   );
+
+
+  //$items['rnaseq/view'] = array(
+  //  'title' => 'View RNA-Seq Expression',
+  //  'page callback' => 'drupal_get_form',
+  //  'page arguments' => array('tripal_rnaseq_view_form'),
+  //  'access arguments' => array('access content'),
+  //  'type' => MENU_NORMAL_ITEM,
+  //);
 
   $items['rnaseq/viewresult'] = array(
     'title' => 'View RNA-Seq Expression',
@@ -159,11 +168,19 @@ function tripal_rnaseq_theme() {
   );
 
   // show view result
+  $items['tripal_rnaseq_view_jbrowse'] = array(
+    'template' => 'tripal_rnaseq_view_jbrowse',
+    'path' => "$path/theme",
+  );
+
   $items['tripal_rnaseq_view'] = array(
     'template' => 'tripal_rnaseq_view',
     'path' => "$path/theme",
   );
   return $items;
+
+
+
 }
 
 function tripal_rnaseq_help($path, $arg) {
