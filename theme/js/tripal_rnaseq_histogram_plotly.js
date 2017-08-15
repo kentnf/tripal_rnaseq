@@ -1,13 +1,13 @@
 
 //console.log(experiments);
-console.log(rnaseq_exps);
+//console.log(rnaseq_exps);
 
 rnaseq_histogram(rnaseq_exps,experiments);
 
 /**
  * plot histogram according to input factors
  */
-function rnaseq_histogram_plot(title_name, type_name, factor1, factor2, experiments, values, sd) {
+function rnaseq_histogram_plot(div, title_name, type_name, factor1, factor2, experiments, values, sd) {
 
 	// plot histogram for groups of factor1 and factor2
 	var group = new Object();
@@ -76,7 +76,7 @@ function rnaseq_histogram_plot(title_name, type_name, factor1, factor2, experime
 			title: title_name,
 			yaxis: { title: type_name },
 			barmode: 'group'};
-        Plotly.newPlot('tripal-rnaseq-histogram', trace_data, layout);
+        Plotly.newPlot(div, trace_data, layout);
 	}
 	// plot histogram for each sample
 	else {
@@ -115,7 +115,7 @@ function rnaseq_histogram_plot(title_name, type_name, factor1, factor2, experime
             title: title_name,
             yaxis: { title: type_name },
             barmode: 'group'};
-        Plotly.newPlot('tripal-rnaseq-histogram', trace_data, layout);
+        Plotly.newPlot(div, trace_data, layout);
 	
 	}
 }
@@ -135,75 +135,123 @@ function rnaseq_histogram(rnaseq_exps, experiments) {
 	for (var project_id in rnaseq_exps ) {
 		bioproject_opts += "<option value=\""+ project_id + "\">" + rnaseq_exps[project_id]['name'] + "</option>\n";
 	}
+	bioproject_opts += "<option value=\"-1\"> All </option>\n";
+
 
 	bioproject_opts = "<label for=\"bioproject-id\">Select Project &nbsp;&nbsp;</label><select id=\"bioproject-id\" class=\"form-control\">\n" + bioproject_opts + "</select>\n";
 
 	jQuery('#tripal-rnaseq-form-select').html(bioproject_opts);
 
 	jQuery('#bioproject-id').on('change', function() {
-        
+
+		// clear the content inside of tripal-rnaseq-histogram       
+		jQuery('#tripal-rnaseq-histogram div').empty();
+
 		var project_id = jQuery('#bioproject-id').val();
-		var title_name = '<a href="/bioproject/' + project_id + '">' + rnaseq_exps[project_id].name + '</a>';
-		var designs = rnaseq_exps[project_id].designs;
-		var desc = rnaseq_exps[project_id].desc;
-		var desc_html = '<p><b>description: </b></p>';
-		for(var d in desc) {
-			desc_html += desc[d] + "<br>";
-		}
-		jQuery('#tripal-rnaseq-description').html(desc_html);
-		console.log(desc_html);
-        // get expression values and SD by the order of value_types 
-        var type_name; 
-		var sd_name;
-        var values; 
-		var sd = new Array;
-        for (var type in value_types) {
-			type_name = value_types[type];
-			sd_name = 'SD_' + type_name;
-            if (typeof rnaseq_exps[project_id][type_name] !== 'undefined') {
-                values = rnaseq_exps[project_id][type_name];
-                if (typeof rnaseq_exps[project_id][sd_name] !== 'undefined') {
-                    sd = rnaseq_exps[project_id][sd_name];
-                }
-                break;
-            }
-        }
+		// display histogram for all experiment
+		if (project_id == -1) {
+			for (var pid in rnaseq_exps) {
+				var title_name = '<a href="/bioproject/' + pid + '">' + rnaseq_exps[pid].name + '</a>';
+				var desc = rnaseq_exps[pid].desc;
+				var desc_html = '<p><b>description: </b></p>';
+				for(var d in desc) {
+					desc_html += desc[d] + "<br>";
+				}
 
-		// plot sample expression by default
-		var factor1 = undefined;
-		var factor2 = undefined;
-		rnaseq_histogram_plot(title_name, type_name, factor1, factor2, experiments, values, sd);
+				var type_name;
+				var sd_name;
+				var values;
+				var sd = new Array;
+				for (var type in value_types) {
+					type_name = value_types[type];
+					sd_name = 'SD_' + type_name;
 
-		// construct select options for matrix design
-		if (typeof rnaseq_exps[project_id].designs != 'undefined') {
-			var designs = rnaseq_exps[project_id].designs;
-			var matrix_opts = '<option value=\"0\"> -select- </option>\n'; 
-			for (var design_num in designs) {
-				design = designs[design_num];
-				design_var = design[0] + ' vs ' + design[1];
-				matrix_opts += '<option value="' + design_num + '">' + design_var + '</option>\n';
-			}
-			matrix_opts = "<label for=\"biomatrix-id\">Select Factors &nbsp;&nbsp;</label><select id=\"biomatrix-id\" class=\"form-control\">\n" + matrix_opts + "</select>\n";
-			jQuery('#tripal-rnaseq-matrix-select').html(matrix_opts);
+					if (typeof rnaseq_exps[pid][type_name] !== 'undefined') {
+						values = rnaseq_exps[pid][type_name];
+						if (typeof rnaseq_exps[pid][sd_name] !== 'undefined') {
+							sd = rnaseq_exps[pid][sd_name];
+						}
+						break;
+					}					
+				}
 
-			// update image when the matrix changed
-			jQuery('#biomatrix-id').on('change', function() {
-
-				var matrix_id = jQuery('#biomatrix-id').val();
 				var factor1 = undefined;
 				var factor2 = undefined;
-				if (matrix_id > 0) {
-					factor1 = designs[matrix_id][0];
-					factor2 = designs[matrix_id][1];
-				} 
-				rnaseq_histogram_plot(title_name, type_name, factor1, factor2, experiments, values, sd);
-			});
-		} 
-		else {
-			jQuery('#tripal-rnaseq-matrix-select').html('');
+
+				var subdiv = document.createElement("div");
+				subdiv.id = 'tripal-rnaseq-histogram-' + pid;
+				jQuery('#tripal-rnaseq-histogram').append(subdiv); 
+				rnaseq_histogram_plot(subdiv.id, title_name, type_name, factor1, factor2, experiments, values, sd);
+			}
 		}
 
-		//console.log(jQuery('#tripal-rnaseq-matrix-select'));
+		// display histogram for single experiment 
+		else 
+		{
+			var div = 'tripal-rnaseq-histogram';
+			var title_name = '<a href="/bioproject/' + project_id + '">' + rnaseq_exps[project_id].name + '</a>';
+			var designs = rnaseq_exps[project_id].designs;
+			var desc = rnaseq_exps[project_id].desc;
+			var desc_html = '<p><b>description: </b></p>';
+			for(var d in desc) {
+				desc_html += desc[d] + "<br>";
+			}
+			jQuery('#tripal-rnaseq-description').html(desc_html);
+			// console.log(desc_html);
+			// get expression values and SD by the order of value_types 
+        
+			var type_name; 
+			var sd_name;
+			var values; 
+			var sd = new Array;
+			for (var type in value_types) {
+				type_name = value_types[type];
+				sd_name = 'SD_' + type_name;
+            	if (typeof rnaseq_exps[project_id][type_name] !== 'undefined') {
+                	values = rnaseq_exps[project_id][type_name];
+                	if (typeof rnaseq_exps[project_id][sd_name] !== 'undefined') {
+                    	sd = rnaseq_exps[project_id][sd_name];
+                	}
+                	break;
+            	}
+        	}
+
+			// plot sample expression by default
+			var factor1 = undefined;
+			var factor2 = undefined;
+			rnaseq_histogram_plot(div, title_name, type_name, factor1, factor2, experiments, values, sd);
+
+			// construct select options for matrix design
+			if (typeof rnaseq_exps[project_id].designs != 'undefined') {
+				var designs = rnaseq_exps[project_id].designs;
+				var matrix_opts = '<option value=\"0\"> -select- </option>\n'; 
+				for (var design_num in designs) {
+					design = designs[design_num];
+					design_var = design[0] + ' vs ' + design[1];
+					matrix_opts += '<option value="' + design_num + '">' + design_var + '</option>\n';
+				}
+				matrix_opts = "<label for=\"biomatrix-id\">Select Factors &nbsp;&nbsp;</label><select id=\"biomatrix-id\" class=\"form-control\">\n" + matrix_opts + "</select>\n";
+				jQuery('#tripal-rnaseq-matrix-select').html(matrix_opts);
+
+				// update image when the matrix changed
+				jQuery('#biomatrix-id').on('change', function() {
+
+					var matrix_id = jQuery('#biomatrix-id').val();
+					var factor1 = undefined;
+					var factor2 = undefined;
+					if (matrix_id > 0) {
+						factor1 = designs[matrix_id][0];
+						factor2 = designs[matrix_id][1];
+					} 
+					rnaseq_histogram_plot(div, title_name, type_name, factor1, factor2, experiments, values, sd);
+				});
+			} 
+			else {
+				jQuery('#tripal-rnaseq-matrix-select').html('');
+			}
+
+			//console.log(jQuery('#tripal-rnaseq-matrix-select'));
+		}
 	});
 }
 
