@@ -19,12 +19,18 @@ function tripal_rnaseq_heatmap_form($form, $form_state) {
   $general_org = $_SESSION['tripal_rnaseq_analysis']['general_org'];
   $ref_opts = tripal_rnaseq_get_reference_options($general_org); 
 
+  // get project info
+  $bioproject = chado_generate_var('project', array('project_id' => $project_id));
+  $bioproject = chado_expand_var($bioproject, 'field', 'project.description');
+  $bioproject_url = l($bioproject->name, '/rnaseq/' . $general_org . '/' . $project_id);
+  $project_info_html = "The project $bioproject_url has been selected.<br>";
+
   $form['reference'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Select Reference Genome'),
+    '#title' => t('Select a reference genome'),
     '#collapsible' => FALSE,
     '#collapsed' => FALSE,
-    '#description' => 'the refernece genome is only used in read mapping, not the speicies or cultivar of sample',
+    //'#description' => 'The refernece genome is only used in read mapping, not the speicies or cultivar of sample',
   );
 
   $form['reference']['organism_id'] = array(
@@ -39,7 +45,7 @@ function tripal_rnaseq_heatmap_form($form, $form_state) {
   $form['query'] = array(
     '#type' => 'fieldset',
     '#title' => t('Enter the list of gene IDs.'),
-    '#description' => t('Only gene ID is accept, and the max number is 1000'),
+    '#description' => t('Only gene IDs are accepted. The maximum input number is 1000.'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
   );
@@ -71,7 +77,11 @@ function tripal_rnaseq_heatmap_form($form, $form_state) {
     '#value' => t('Submit'),
   );
 
-  $form['#prefix'] = '<div class="row"> <div class="col-md-8 col-md-offset-2">';
+  $form['#prefix'] = "
+    <div class=\"row\"><div class=\"col-md-8 col-md-offset-2\">
+      <div class=\"alert alert-dismissable alert-info\">
+        <strong>$project_info_html</strong>
+      </div>";
   $form['#suffix'] = '</div> </div>';
 
   return $form;

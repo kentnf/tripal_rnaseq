@@ -19,6 +19,12 @@ function tripal_rnaseq_deg_form($form, $form_state) {
   $general_org = $_SESSION['tripal_rnaseq_analysis']['general_org'];
   $ref_opts = tripal_rnaseq_get_reference_options($general_org); 
 
+  // get project info
+  $bioproject = chado_generate_var('project', array('project_id' => $project_id));
+  $bioproject = chado_expand_var($bioproject, 'field', 'project.description');
+  $bioproject_url = l($bioproject->name, '/rnaseq/' . $general_org . '/' . $project_id);
+  $project_info_html = "The project $bioproject_url has been selected.<br>";
+
   $form['project_id'] = array(
     '#type' => 'hidden',
     '#value' => $project_id,
@@ -26,10 +32,10 @@ function tripal_rnaseq_deg_form($form, $form_state) {
 
   $form['reference'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Select Reference Genome'),
+    '#title' => t('Select a reference genome'),
     '#collapsible' => FALSE,
     '#collapsed' => FALSE,
-    '#description' => 'the refernece genome is only used in read mapping, not the speicies or cultivar of sample',
+    //'#description' => 'the refernece genome is only used in read mapping, not the speicies or cultivar of sample',
   );
 
   $form['reference']['organism_id'] = array(
@@ -38,7 +44,7 @@ function tripal_rnaseq_deg_form($form, $form_state) {
     '#options' => $ref_opts,
     '#default_value' => isset($_SESSION['tripal_rnaseq_analysis']['organism_id']) ? $_SESSION['tripal_rnaseq_analysis']['organism_id'] : '',
     '#required' => TRUE,
-    '#description' => t('select reference genome'),
+    //'#description' => t('select reference genome'),
   );
 
   // pairwise or time series
@@ -54,14 +60,14 @@ function tripal_rnaseq_deg_form($form, $form_state) {
 
   $form['comparison'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Select comparison type and samples.'),
+    '#title' => t('Select a comparison type and samples.'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
   );
 
   $form['comparison']['type'] = array(
     '#type' => 'select',
-    '#title' => 'Select Comparison Type',
+    '#title' => 'Comparison type',
     '#options' => $type_opts,
     '#required' => TRUE,
   );
@@ -91,7 +97,7 @@ function tripal_rnaseq_deg_form($form, $form_state) {
           '#type' => 'checkbox',
           '#title' => $sample_name,
           //'#default_value' => isset($_SESSION['tripal_synview_search']['REFORG'][$org_id]) ? 1 : 0,
-          '#prefix' => '<br><b>For time series comparison, please select three samples at least:</b><br><span style="float: left; display: block; margin: 10px;">',
+          '#prefix' => '<br><b>For time series comparison, please select at least three samples:</b><br><span style="float: left; display: block; margin: 10px;">',
           '#suffix' => '</span>',
         );
       } else {
@@ -123,14 +129,14 @@ function tripal_rnaseq_deg_form($form, $form_state) {
 
   $form['advance']['ratio'] = array(
     '#type' => 'textfield',
-    '#title' => t('Ratio'),
+    '#title' => t('Fold-change cutoff'),
     '#maxlength' => 20,
     '#default_value' => '2',
   );
 
   $form['advance']['adjp'] = array(
     '#type' => 'textfield',
-    '#title' => t('Adjusted P-value'),
+    '#title' => t('Adjusted <i>p</i>-value cutoff'),
     '#maxlength' => 20, 
     '#default_value' => '0.05',
   );
@@ -141,7 +147,12 @@ function tripal_rnaseq_deg_form($form, $form_state) {
     '#suffix' => '<br><br>',
   );
 
-  $form['#prefix'] = '<div class="row"> <div class="col-md-8 col-md-offset-2">';
+  // prefix and suffix
+  $form['#prefix'] = "
+    <div class=\"row\"><div class=\"col-md-8 col-md-offset-2\">
+      <div class=\"alert alert-dismissable alert-info\">
+        <strong>$project_info_html</strong>
+      </div>";
   $form['#suffix'] = '</div> </div>';
 
   return $form;
@@ -241,14 +252,17 @@ function tripal_rnaseq_deg_form_submit($form, $form_state) {
         $path = $result->path;
         $path = preg_replace("/_sd.txt$/i", "", $path);
         $raw_count_file = $path . "_raw.txt";
+        $sd_file = $path . "_sd.txt";
         $rpkm_file = $path . ".txt";
       }  
     }
   } else {
+    drupal_set_message(t('Can not perform DEG analysis for there is no biological replicates for this data.'), 'warning');
     $error = 1;
   }
 
   if (!is_readable($raw_count_file) || !is_readable($rpkm_file)) {
+    drupal_set_message(t('Can not find expression files.'), 'warning');
     $error = 1;
   }
 
@@ -257,6 +271,7 @@ function tripal_rnaseq_deg_form_submit($form, $form_state) {
   $func_file = $func_dir . DIRECTORY_SEPARATOR . 'org' . $org_id . '_annotation.txt';
 
   if (!is_readable($func_file)) {
+    drupal_set_message(t('Can not find function annotation.'), 'warning');
     $error = 1;
   }
 

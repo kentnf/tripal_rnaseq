@@ -493,7 +493,8 @@ foreach my $comp ( @comparisonT )
 	my $out_line; my $sig = 0;
 	foreach my $gene (sort keys %$RPKM)
 	{
-		my $function = $anno{$gene};
+		my $function = '';
+        $function = $anno{$gene} if defined $anno{$gene};
 		$out_line = $gene."\t".$function;
 
 		foreach my $s (@samples) {

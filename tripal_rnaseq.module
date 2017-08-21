@@ -51,7 +51,7 @@ function tripal_rnaseq_menu() {
 
   // === project ===
   $items['rnaseq/%/%'] = array(
-    'title' => 'Cucurbit Expression Atlas -- Project & Sample Information',
+    'title' => 'Cucurbit Expression Atlas',
     'access arguments' => array('access content'),
     'page callback' => 'tripal_rnaseq_info',
     'page arguments' => array(1, 2),
@@ -61,7 +61,7 @@ function tripal_rnaseq_menu() {
 
   // === heatmap === 
   $items['rnaseq/heatmap'] = array(
-    'title' => 'Cucurbit Expression Atlas -- Heatmap',
+    'title' => 'Cucurbit Expression Atlas',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('tripal_rnaseq_heatmap_form'),
     'access arguments' => array('access content'),
@@ -69,7 +69,7 @@ function tripal_rnaseq_menu() {
   );
 
   $items['rnaseq/heatmapresult'] = array(
-    'title' => 'Cucurbit Expression Atlas -- Heatmap',
+    'title' => 'Cucurbit Expression Atlas',
     'page callback' => 'tripal_rnaseq_heatmap_result',
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
@@ -77,7 +77,7 @@ function tripal_rnaseq_menu() {
 
   // === DEG ===
   $items['rnaseq/deg'] = array(
-    'title' => 'Cucurbit Expression Atlas -- Differential Express Analysis',
+    'title' => 'Cucurbit Expression Atlas',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('tripal_rnaseq_deg_form'),
     'access arguments' => array('access content'),
@@ -85,7 +85,7 @@ function tripal_rnaseq_menu() {
   );
 
   $items['rnaseq/degresult/%'] = array(
-    'title' => 'Cucurbit Expression Atlas -- Differential Express Analysis',
+    'title' => 'Cucurbit Expression Atlas',
     'page callback' => 'tripal_rnaseq_deg_job',
     'page arguments' => array(2),
     'access arguments' => array('access content'),
@@ -94,7 +94,7 @@ function tripal_rnaseq_menu() {
 
   // === view (JBrowse) ===
   $items['rnaseq/jbrowse'] = array(
-    'title' => 'Cucurbit Expression Atlas -- View RNA-Seq Expression',
+    'title' => 'Cucurbit Expression Atlas',
     'page callback' => 'theme',
     'page arguments' => array('tripal_rnaseq_jbrowse'),
     'access arguments' => array('access content'),
@@ -102,7 +102,7 @@ function tripal_rnaseq_menu() {
   );
 
   $items['rnaseq/selectorg'] = array(
-    'title' => 'Cucurbit Expression Atlas -- View RNA-Seq Expression',
+    'title' => 'Cucurbit Expression Atlas',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('tripal_rnaseq_jbrowse_form'),
     'access arguments' => array('access content'),

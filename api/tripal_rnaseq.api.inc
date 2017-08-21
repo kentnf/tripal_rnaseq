@@ -36,12 +36,41 @@ function tripal_rnaseq_block_view($delta='') {
  */
 function tripal_rnaseq_submenu() {
 
+  $current_path = current_path();
+  if ($current_path == 'rnaseq/selectorg') {
+    $current_path = 'rnaseq/jbrowse';
+  }
+
+  // get project id and general_org from session
+  if (isset($_SESSION['tripal_rnaseq_analysis']['project_id'])
+      && isset($_SESSION['tripal_rnaseq_analysis']['general_org']) ) {
+  } else {
+    drupal_set_message(t('Can not find any bioproject, please select from RNA-seq Collection.'), 'warning');
+    drupal_goto("rnaseq/home");
+  }
+
+  $project_id  = $_SESSION['tripal_rnaseq_analysis']['project_id'];
+  $general_org = $_SESSION['tripal_rnaseq_analysis']['general_org'];
+
+  $menu_basic = array(
+    'Home' 				=> t('/rnaseq/home'),
+	'Info'				=> t('/rnaseq/' . $general_org . "/" . $project_id),
+    'Heatmap' 			=> t('/rnaseq/heatmap'),
+    'DEGs' 				=> t('/rnaseq/deg'),
+    'Expression Viewer' => t('/rnaseq/jbrowse'),
+  ); 
+
   $menu = array();
-  $menu[] = l('Home', 'rnaseq/home');
-  $menu[] = l('Heatmap', 'rnaseq/heatmap');
-  $menu[] = l('DEGs', 'rnaseq/deg');
-  $menu[] = l('Expression Viewer', 'rnaseq/jbrowse');
-  $menu_html = '<h4 class="text-center text-info">' . implode(" | ", $menu) . '</h4><br>';
+  foreach ($menu_basic as $name => $path) {
+    if ($path == '/'.$current_path) {
+      $menu[] = "<font class=\"bg-primary\">$name</font>";
+    }
+    else {
+      $menu[] = "<a href=\"$path\">$name</a>";
+    }
+  }
+
+  $menu_html = '<h4 class="text-center text-info"><nav class="nav">' . implode(" | ", $menu) . '</nav></h4><br>';
   return $menu_html;
 }
 

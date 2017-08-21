@@ -18,7 +18,7 @@ using <a href="bowtie-bio.sourceforge.net" target="_blank">Bowtie</a> allowing u
 mismatches. The resulting reads/read pairs were aligned to the corresponding genome using 
 <a href="https://ccb.jhu.edu/software/hisat" target="_blank">HISAT</a> allowing up to two mismatches. 
 The expression of transcripts was measured and normalized to FPKM (fragments per kilobase 
-of exon per million mapped fragments) base on all mapped read.
+of exon per million mapped fragments) base on all mapped reads.
 </p>
 
 <h3>RNA-seq Collection</h3>
