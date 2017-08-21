@@ -59,6 +59,15 @@ function tripal_rnaseq_menu() {
     'weight' => 10,
   );
 
+  $items['rnaseqsample/%'] = array(
+    'title' => 'Cucurbit Expression Atlas',
+    'access arguments' => array('access content'),
+    'page callback' => 'tripal_rnaseq_sample_info',
+    'page arguments' => array(1),
+    'type' => MENU_NORMAL_ITEM,
+    'weight' => 10,
+  );
+
   // === heatmap === 
   $items['rnaseq/heatmap'] = array(
     'title' => 'Cucurbit Expression Atlas',
@@ -135,6 +144,11 @@ function tripal_rnaseq_theme() {
     'path' => "$path/theme",
   );
 
+  $items['tripal_rnaseq_sample_info'] = array(
+    'template' => 'tripal_rnaseq_sample_info',
+    'path' => "$path/theme",
+  );
+
   // show histrogram 
   $items['tripal_feature_rnaseq_expression'] = array(
     'template' => 'tripal_feature_rnaseq_expression',
@@ -179,6 +193,11 @@ function tripal_rnaseq_info($org, $project_id) {
   $_SESSION['tripal_rnaseq_analysis']['general_org'] = $org;
   $_SESSION['tripal_rnaseq_analysis']['project_id']  = $project_id; 
   return theme('tripal_rnaseq_info', array('general_org' => $org, 'project_id'=>$project_id));
+}
+
+function tripal_rnaseq_sample_info($sample_id) {
+  // save select project and general organism to session
+  return theme('tripal_rnaseq_sample_info', array('sample_id'=>$sample_id));
 }
 
 function tripal_rnaseq_deg_job($job_string) {

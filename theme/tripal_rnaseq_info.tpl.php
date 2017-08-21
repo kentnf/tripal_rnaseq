@@ -144,7 +144,7 @@ $bioproject = chado_expand_var($bioproject, 'field', 'project.description');
   if (sizeof($experiments) > 0) {
     ?>
     <br>
-    <div class="tripal_bioproject-data-block-desc tripal-data-block-desc"><h4>Experiments of this BioProject:</h4></div>
+    <div class="tripal_bioproject-data-block-desc tripal-data-block-desc"><h4>BioSamples of this BioProject:</h4></div>
     <?php
 
     $headers = array('BioSample', 'Organism', 'Description');
@@ -176,7 +176,7 @@ $bioproject = chado_expand_var($bioproject, 'field', 'project.description');
       } 
 
       $rows[] = array(
-		l($experiment->sample_name, 'biosample/' . $experiment->biomaterial_id),
+		l($experiment->sample_name, 'rnaseqsample/' . $experiment->biomaterial_id),
 		$experiment->common_name,
         $description,
       );
