@@ -60,7 +60,7 @@ function tripal_rnaseq_deg_form($form, $form_state) {
 
   $form['comparison'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Select a comparison type and samples.'),
+    '#title' => t('Select the comparison type and samples.'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
   );
@@ -76,7 +76,7 @@ function tripal_rnaseq_deg_form($form, $form_state) {
       '#type' => 'select',
       '#title' => t('Sample A'),
       '#options' => $sample_opts,
-      '#prefix' => '<br><b>For pairwise comparison, please select different samples:</b><br><span style="float: left; padding: 10px;">',
+      '#prefix' => '<br><b>For pairwise comparison, please select two different samples:</b><br><span style="float: left; padding: 10px;">',
       '#suffix' => '</span>',
     );
 

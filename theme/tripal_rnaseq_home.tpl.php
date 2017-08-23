@@ -6,23 +6,24 @@ unset($_SESSION['tripal_rnaseq_analysis']);
 ?>
 
 <div class="row"> <div class="col-md-12">
-<h3>Method Description for RNA-seq</h3>
+<h3>RNA-Seq analysis method description</h3>
 <p>
 
 The raw RNA-Seq reads were processed to remove adapters as well as low quality bases using
 <a href="http://www.usadellab.org/cms/?page=trimmomatic" target="_blank">Trimmomatic</a>, 
-and the trimmed reads shorter than 80% of original length were discarded. The remaining high
-quality reads were subjected to rRNA sequence removal by aligning to the 
-<a href="https://www.arb-silva.de/" target="_blank">SILVA rRNA database</a>
+and the trimmed reads shorter than 80% of original length were discarded. The remaining high-
+quality reads were aligned to the 
+<a href="https://www.arb-silva.de/" target="_blank">SILVA rRNA database</a> 
+to remove rRNA sequences
 using <a href="bowtie-bio.sourceforge.net" target="_blank">Bowtie</a> allowing up to two 
 mismatches. The resulting reads/read pairs were aligned to the corresponding genome using 
 <a href="https://ccb.jhu.edu/software/hisat" target="_blank">HISAT</a> allowing up to two mismatches. 
-The expression of transcripts was measured and normalized to FPKM (fragments per kilobase 
+The expression levels of transcripts were measured and normalized to FPKM (fragments per kilobase 
 of exon per million mapped fragments) base on all mapped reads.
 </p>
 
-<h3>RNA-seq Collection</h3>
-<p>The mRNA expression database contains samples collected from the following projects</p>
+<h3>RNA-Seq collections</h3>
+<p>The cucurbit expression atlas database contains the following projects</p>
 </div></div>
 <div class="row">
 <?php
