@@ -113,6 +113,10 @@ function tripal_rnaseq_heatmap_form_validate($form, &$form_state) {
         $genes[trim($id)] = 1;
       }
 
+      if (sizeof($genes) < 5) {
+        form_set_error('query', t("Only accept IDs no less than 5\n"));
+      }
+
       if (sizeof($genes) > 1000) {
         form_set_error('query', t("Only accept IDs no more than 1000\n"));
       }

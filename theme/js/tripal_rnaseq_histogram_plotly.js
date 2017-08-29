@@ -138,7 +138,7 @@ function rnaseq_histogram(rnaseq_exps, experiments) {
 	bioproject_opts += "<option value=\"-1\"> All </option>\n";
 
 
-	bioproject_opts = "<label for=\"bioproject-id\">Select Project &nbsp;&nbsp;</label><select id=\"bioproject-id\" class=\"form-control\">\n" + bioproject_opts + "</select>\n";
+	bioproject_opts = "<label for=\"bioproject-id\">Select a project &nbsp;&nbsp;</label><select id=\"bioproject-id\" class=\"form-control\">\n" + bioproject_opts + "</select>\n";
 
 	jQuery('#tripal-rnaseq-form-select').html(bioproject_opts);
 
@@ -182,6 +182,12 @@ function rnaseq_histogram(rnaseq_exps, experiments) {
 				subdiv.id = 'tripal-rnaseq-histogram-' + pid;
 				jQuery('#tripal-rnaseq-histogram').append(subdiv); 
 				rnaseq_histogram_plot(subdiv.id, title_name, type_name, factor1, factor2, experiments, values, sd);
+
+				// create div for description 
+				var subdiv2 = document.createElement("div");
+				subdiv2.id = 'tripal-rnaseq-desc-' + pid;
+				jQuery('#tripal-rnaseq-histogram').append(subdiv2);
+				jQuery('#' + subdiv2.id).html(desc_html);
 			}
 		}
 

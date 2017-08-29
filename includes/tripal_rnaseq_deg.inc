@@ -261,6 +261,13 @@ function tripal_rnaseq_deg_form_submit($form, $form_state) {
     $error = 1;
   }
 
+  // change the path of raw count and rpkm for icugidev and icuginew site
+  $current_wd = getcwd();
+  if ($current_wd == '/var/www/html/icugidev') {
+    $raw_count_file = preg_replace("/icuginew/", "icugidev", $raw_count_file);
+    $rpkm_file = preg_replace("/icuginew/", "icugidev", $rpkm_file);
+  }
+
   if (!is_readable($raw_count_file) || !is_readable($rpkm_file)) {
     drupal_set_message(t('Can not find expression files.'), 'warning');
     $error = 1;

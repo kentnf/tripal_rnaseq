@@ -15,7 +15,7 @@
 function tripal_rnaseq_node_info() {
   $nodes = array();
   $nodes['chado_rnaseq'] = array(
-    'name' => t('RNASeq Expression'),
+    'name' => t('Gene Expression'),
     'base' => 'chado_rnaseq',
     'description' => t('Load gene expression generated from RNASeq.'),
     'has_title' => TRUE,

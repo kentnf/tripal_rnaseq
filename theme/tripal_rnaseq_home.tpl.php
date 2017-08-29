@@ -11,8 +11,7 @@ unset($_SESSION['tripal_rnaseq_analysis']);
 
 The raw RNA-Seq reads were processed to remove adapters as well as low quality bases using
 <a href="http://www.usadellab.org/cms/?page=trimmomatic" target="_blank">Trimmomatic</a>, 
-and the trimmed reads shorter than 80% of original length were discarded. The remaining high-
-quality reads were aligned to the 
+and the trimmed reads shorter than 80% of original length were discarded. The remaining high-quality reads were aligned to the 
 <a href="https://www.arb-silva.de/" target="_blank">SILVA rRNA database</a> 
 to remove rRNA sequences
 using <a href="bowtie-bio.sourceforge.net" target="_blank">Bowtie</a> allowing up to two 
