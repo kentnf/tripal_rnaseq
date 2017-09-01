@@ -187,9 +187,11 @@ function tripal_rnaseq_preprocess_tripal_feature_rnaseq_expression(&$variables) 
           $sample_id = $samples_name_id[$sample_name];
 
           for($i=1; $i<count($member); ++$i) {
-            $factor = $title[$i];
-            $factor_name = $member[$i];
-            $samples[$sample_id]->$factor = $factor_name;
+            if (isset($member[$i]) and isset($title[$i])) {
+              $factor = $title[$i];
+              $factor_name = $member[$i];
+              $samples[$sample_id]->$factor = $factor_name;
+            }
           }
         }
 
@@ -207,9 +209,13 @@ function tripal_rnaseq_preprocess_tripal_feature_rnaseq_expression(&$variables) 
             $designs[$design_num] = array($f1, $f2);
           }
         }
-
-        $rnaseq_exp[$project_id->project_id]->designs = $designs;
-        $rnaseq_exp[$project_id->project_id]->desc = $description;
+			
+        if (sizeof($factors) > 0) {
+          $rnaseq_exp[$project_id->project_id]->designs = $designs;
+        }
+        if (sizeof($description) > 0) {
+          $rnaseq_exp[$project_id->project_id]->desc = $description;
+        }
       }
     }
 

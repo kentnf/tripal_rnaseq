@@ -18,17 +18,21 @@ function rnaseq_histogram_plot(div, title_name, type_name, factor1, factor2, exp
 			}
 			var name1 = experiments[exp_id][factor1];
 			var name2 = experiments[exp_id][factor2];
-			if (typeof group[name1] == 'undefined') {
-				group[name1] = new Object();
+
+			if (typeof(name1) != 'undefined' && typeof(name2) != 'undefined') {
+	 			if (typeof group[name1] == 'undefined') {
+					group[name1] = new Object();
+				}
+				if (typeof group[name1][name2] == 'undefined') {
+					group[name1][name2] = new Array();
+				}
+				group[name1][name2].push(exp_id);
 			}
-			if (typeof group[name1][name2] == 'undefined') {
-				group[name1][name2] = new Array();
-			}
-			group[name1][name2].push(exp_id);
 		}
-		console.log(factor1);
-		console.log(factor2);
-		console.log(group);
+		
+		//console.log(factor1);
+		//console.log(factor2);
+		//console.log(group);
 
 		var trace_obj = new Object();
 		for (name1 in group) {
@@ -153,10 +157,11 @@ function rnaseq_histogram(rnaseq_exps, experiments) {
 			for (var pid in rnaseq_exps) {
 				var title_name = '<a href="/bioproject/' + pid + '">' + rnaseq_exps[pid].name + '</a>';
 				var desc = rnaseq_exps[pid].desc;
-				var desc_html = '<p><b>description: </b></p>';
+				var desc_html = '<p><b>Description: </b> <br>';
 				for(var d in desc) {
 					desc_html += desc[d] + "<br>";
 				}
+				desc_html += '</p>';
 
 				var type_name;
 				var sd_name;
@@ -189,6 +194,7 @@ function rnaseq_histogram(rnaseq_exps, experiments) {
 				jQuery('#tripal-rnaseq-histogram').append(subdiv2);
 				jQuery('#' + subdiv2.id).html(desc_html);
 			}
+			jQuery('#tripal-rnaseq-description').html('');
 		}
 
 		// display histogram for single experiment 
@@ -198,10 +204,12 @@ function rnaseq_histogram(rnaseq_exps, experiments) {
 			var title_name = '<a href="/bioproject/' + project_id + '">' + rnaseq_exps[project_id].name + '</a>';
 			var designs = rnaseq_exps[project_id].designs;
 			var desc = rnaseq_exps[project_id].desc;
-			var desc_html = '<p><b>description: </b></p>';
+			var desc_html = '<p><b>Description: </b></p>';
 			for(var d in desc) {
 				desc_html += desc[d] + "<br>";
 			}
+			desc_html += '</p>';
+
 			jQuery('#tripal-rnaseq-description').html(desc_html);
 			// console.log(desc_html);
 			// get expression values and SD by the order of value_types 
