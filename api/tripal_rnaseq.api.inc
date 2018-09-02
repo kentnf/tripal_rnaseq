@@ -57,7 +57,7 @@ function tripal_rnaseq_submenu() {
 	'Info'				=> t('/rnaseq/' . $general_org . "/" . $project_id),
     'Heatmap' 			=> t('/rnaseq/heatmap'),
     'DEGs' 				=> t('/rnaseq/deg'),
-    'Expression Viewer' => t('/rnaseq/jbrowse'),
+    'Expression Viewer' => t('/rnaseq/selectorg'),
   ); 
 
   $menu = array();
@@ -111,17 +111,17 @@ function tripal_rnaseq_get_reference_options($project_id) {
       continue;
     }
   }
-  
+ 
   $organism_opts = array();
   foreach ($orgs as $org) {
     if ($org->organism_id == 10) { //common watermelon
-	  $organism_opts = array_merge($wm_opts, $organism_opts);
+	  $organism_opts = $wm_opts + $organism_opts;
 	}
 	elseif ($org->organism_id == 11) { //common cucumber
-	  $organism_opts = array_merge($cu_opts, $organism_opts);
+	  $organism_opts = $cu_opts + $organism_opts;
 	}
 	elseif ($org->organism_id == 12) { //common melon
-      $organism_opts = array_merge($me_opts, $organism_opts);
+      $organism_opts = $me_opts + $organism_opts;
 	}
 	else {	// RNA-Seq reads align to specific organism
       $organism_opts[$org->organism_id] = $org->common_name;

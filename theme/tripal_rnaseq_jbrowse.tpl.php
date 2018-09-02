@@ -1,7 +1,4 @@
 <?php 
-
-  //dpm($_SESSION['tripal_rnaseq_analysis']);
-
   // [JBrowse] get RNA-seq tracks according to project and samples
   if ( isset($_SESSION['tripal_rnaseq_analysis']['project_id']) ) {
     if ( isset($_SESSION['tripal_rnaseq_analysis']['organism_id']) ) {
@@ -45,6 +42,10 @@
     $jbrowse_data = 'cma';
   } elseif ($organism_id == 9) {
     $jbrowse_data = 'cmo';
+  } elseif ($organism_id == 13) {
+    $jbrowse_data = 'cpe';
+  } elseif ($organism_id == 14) {
+    $jbrowse_data = 'lsi';
   } else {
     $jbrowse_data = NULL;
   }
