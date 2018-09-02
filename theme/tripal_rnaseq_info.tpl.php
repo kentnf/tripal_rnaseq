@@ -160,7 +160,7 @@ $bioproject = chado_expand_var($bioproject, 'field', 'project.description');
       elseif ($experiment->genus == 'Cucurbita' and $general_org == 'pu') {
       }
       else {
-        continue; // skip if the experiment and general_org does not match
+        //continue; // skip if the experiment and general_org does not match
       }
 
       // get prop of biosample for description
@@ -181,7 +181,7 @@ $bioproject = chado_expand_var($bioproject, 'field', 'project.description');
         $description,
       );
       $enames[] = $experiment->exp_name;
-      //dpm($experiment);
+      #dpm($experiment);
     }
 
     $table = array(
@@ -201,4 +201,3 @@ $bioproject = chado_expand_var($bioproject, 'field', 'project.description');
 
   $_SESSION['tripal_rnaseq_analysis']['samples'] = $enames;
 
- 

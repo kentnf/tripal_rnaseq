@@ -61,7 +61,7 @@ $sRNA_type_id = $result[0]->cvterm_id;
 
 // get all projects of rnaseult->species
 $sql = "SELECT E.experiment_id, E.name, T.project_id, T.name as project_name, T.description, S.biomaterial_id,
-     S.name as biomaterial_name, O.genus, O.species
+     S.name as biomaterial_name, O.genus, O.species, O.common_name
     FROM chado.experiment E
     LEFT JOIN chado.biomaterial S ON E.biomaterial_id = S.biomaterial_id
     LEFT JOIN chado.organism O ON S.taxon_id = O.organism_id
@@ -112,15 +112,21 @@ foreach ($results as $result) {
     $org_project['Cucurbita'][] = l($result->project_name, 'rnaseq/pu/' . $result->project_id, $tooltip);
   }
   else {
-    $unknown_org = $result->genus . " " . $result->species;
-    drupal_set_message("tripal_rnaseq: unknown organism: $unknown_org", 'error');
+    $sname = preg_replace('/ \(.*/', '', $result->common_name);
+	$org_project[$sname][] = l($result->project_name, 'rnaseq/other/' . $result->project_id, $tooltip);
+    //$unknown_org = $result->genus . " " . $result->species;
+    //drupal_set_message("tripal_rnaseq: unknown organism: $unknown_org", 'error');
   }
 }
 
 // display html
+print "<div class=\"row\">";
+$order = 0;
 foreach ($org_project as $general_name => $projects) {
-  print "<div class=\"col-md-3\"><center>";
+  $order++;
   $projects = array_unique($projects);
+
+  print "<div class=\"col-md-3\"><center>";
   print "<h4>" . ucfirst($general_name) . "</h4>";
   $image = '';
   if ($general_name == 'cucumber') {
@@ -132,8 +138,11 @@ foreach ($org_project as $general_name => $projects) {
   elseif ($general_name == 'melon') {
     $image = "<img src=\"/sites/default/files/img/fp_me_s.png\" style=\"height:75px;width:85px\" /><br><br>";
   }
-  else {
+  elseif ($general_name == 'Cucurbita') {
     $image = "<img src=\"/sites/default/files/img/fp_pu_s.png\" style=\"height:75px;width:85px\" /><br><br>";
+  }
+  else {
+    $image = "<img src=\"/sites/default/files/img/bg_s.png\" style=\"height:75px;width:85px\" /><br><br>";
   }
   print $image;
 
@@ -142,7 +151,14 @@ foreach ($org_project as $general_name => $projects) {
   }
 
   print "</center></div>";
+
+  if ($order % 4 == 0) {
+	print "</div>";
+	print "<div class=\"row\">";
+  }
 }
+
+print "</div>";
 
   // output result to table
   /**

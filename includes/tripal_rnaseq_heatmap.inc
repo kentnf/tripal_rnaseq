@@ -7,6 +7,7 @@ function tripal_rnaseq_heatmap_form($form, $form_state) {
 
   // drupal_set_title(t('New title for the node form'));
   // dpm($_SESSION['tripal_rnaseq_analysis']);
+
   if (isset($_SESSION['tripal_rnaseq_analysis']['project_id'])
       && isset($_SESSION['tripal_rnaseq_analysis']['general_org']) ) {
 
@@ -17,7 +18,7 @@ function tripal_rnaseq_heatmap_form($form, $form_state) {
 
   $project_id  = $_SESSION['tripal_rnaseq_analysis']['project_id'];
   $general_org = $_SESSION['tripal_rnaseq_analysis']['general_org'];
-  $ref_opts = tripal_rnaseq_get_reference_options($general_org); 
+  $ref_opts = tripal_rnaseq_get_reference_options($project_id); 
 
   // get project info
   $bioproject = chado_generate_var('project', array('project_id' => $project_id));

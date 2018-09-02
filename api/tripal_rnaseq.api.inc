@@ -77,30 +77,55 @@ function tripal_rnaseq_submenu() {
 /**
  * @return organism options  
  */
-function tripal_rnaseq_get_reference_options($general_org) {
+function tripal_rnaseq_get_reference_options($project_id) {
+
+  // get all the organism related to this project
+  $sql = "SELECT O.organism_id, O.genus, O.species, O.common_name
+    FROM chado.experiment E
+    LEFT JOIN chado.biomaterial S ON E.biomaterial_id = S.biomaterial_id
+    LEFT JOIN chado.organism O ON S.taxon_id = O.organism_id
+    WHERE E.project_id = :project_id
+  ";
+  $args = array(':project_id' => $project_id);
+  $results = db_query($sql, $args)->fetchAll();
+  $orgs = array_unique($results, SORT_REGULAR);
+  //dpm($orgs);
 
   $results = chado_select_record('organism', array('organism_id','common_name', 'genus', 'species'), array());
   foreach ($results as $result) {
     // skip the general orgamism name
-    if ($result->organism_id > 9) {
+	if ($result->organism_id == 10 || $result->organism_id == 11 || $result->organism_id == 12) {
        continue;
     }
     // get organism options base on general organism short name
-    elseif ($result->genus == 'Citrullus' and $general_org == 'wm') {
-      $organism_opts[$result->organism_id] = $result->common_name;
+    elseif ($result->genus == 'Citrullus') {
+      $wm_opts[$result->organism_id] = $result->common_name;
     }
-    elseif ($result->species == 'sativus' and $general_org == 'cu') {
-      $organism_opts[$result->organism_id] = $result->common_name;  
+    elseif ($result->species == 'sativus') {
+      $cu_opts[$result->organism_id] = $result->common_name;  
     }
-    elseif ($result->species == 'melo' and $general_org == 'me') {
-      $organism_opts[$result->organism_id] = $result->common_name;  
-    }
-    elseif ($result->genus == 'Cucurbita' and $general_org == 'pu') {
-      $organism_opts[$result->organism_id] = $result->common_name;  
+    elseif ($result->species == 'melo') {
+      $me_opts[$result->organism_id] = $result->common_name;  
     }
     else {
       continue;
     }
+  }
+  
+  $organism_opts = array();
+  foreach ($orgs as $org) {
+    if ($org->organism_id == 10) { //common watermelon
+	  $organism_opts = array_merge($wm_opts, $organism_opts);
+	}
+	elseif ($org->organism_id == 11) { //common cucumber
+	  $organism_opts = array_merge($cu_opts, $organism_opts);
+	}
+	elseif ($org->organism_id == 12) { //common melon
+      $organism_opts = array_merge($me_opts, $organism_opts);
+	}
+	else {	// RNA-Seq reads align to specific organism
+      $organism_opts[$org->organism_id] = $org->common_name;
+	}
   }
   return $organism_opts;
 }

@@ -55,7 +55,7 @@ function tripal_rnaseq_preprocess_tripal_rnaseq_deg_result(&$variables) {
 
 function tripal_rnaseq_preprocess_tripal_rnaseq_heatmap(&$variables) {
 
-  //dpm($variables);
+  dpm($variables);
 
   $exp_json = json_encode($variables['exp']);
   $data_js = "
